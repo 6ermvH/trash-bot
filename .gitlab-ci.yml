@@ -15,6 +15,7 @@ deploy:
     - main
   script:
     - echo "$SSH_PRIVATE_KEY" > private_key.pem
+    - echo $SSH_PRIVATE_KEY
     - chmod 600 private_key.pem
     - scp -i private_key.pem -o StrictHostKeyChecking=no -r ./* root@$SERVER_IP:~/deploy
     - ssh -i private_key.pem -o StrictHostKeyChecking=no root@$SERVER_IP 'cd ~/deploy && nohup python python_bot.py &'
