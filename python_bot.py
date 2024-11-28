@@ -25,7 +25,7 @@ async def button_handler(update: Update, context: CallbackContext) -> None:
         await query.edit_message_text(text=f"Сегодня мусор выносит: {person}")
     elif query.data == '2':
         if trash_taken_out_today:
-            await query.answer("Мусор уже вынесен сегодня!", show_alert=True)
+            await query.edit_message_text(text="Мусор уже вынесен сегодня. Чтобы вынести повторно, пропишите /next")
             return
         current_person_index = (current_person_index + 1) % len(persons)
         person = persons[current_person_index]
