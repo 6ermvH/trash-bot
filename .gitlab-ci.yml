@@ -20,6 +20,9 @@ deploy:
     - ssh -i private_key.pem -o StrictHostKeyChecking=no root@$SERVER_IP "
         pkill -f python_bot.py || true &&
         cd ~/deploy &&
+        echo 'Starting new bot process...' &&
         nohup python python_bot.py > bot.log 2>&1 &
+        sleep 5 &&
+        ps aux | grep python_bot.py
       "
     - echo "Deployment script finished."
