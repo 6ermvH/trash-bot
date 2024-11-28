@@ -23,6 +23,8 @@ deploy:
         echo 'Starting new bot process...' &&
         nohup python python_bot.py > bot.log 2>&1 &
         sleep 5 &&
-        ps aux | grep python_bot.py
+        ps aux | grep python_bot.py &&
+        echo 'Bot log output:' &&
+        cat bot.log
       "
     - echo "Deployment script finished."
