@@ -15,7 +15,17 @@ deploy:
     - main
   script:
     - echo "$SSH_PRIVATE_KEY" > private_key.pem
-    - echo $SSH_PRIVATE_KEY
     - chmod 600 private_key.pem
     - scp -i private_key.pem -o StrictHostKeyChecking=no -r ./* root@$SERVER_IP:~/deploy
-    - ssh -i private_key.pem -o StrictHostKeyChecking=no root@$SERVER_IP 'cd ~/deploy && nohup python python_bot.py &'
+    - ssh -i private_key.pem -o StrictHostKeyChecking=no root@$SERVER_IP '
+        cd ~/deploy &&
+        nohup python python_bot.py > bot.log 2>&1 &
+        sleep 10 &&
+        if ps -p $! > /dev/null; then
+          echo "Program is running successfully" &&
+          exit 0
+        else
+          echo "Program failed to start" &&
+          exit 1
+        fi
+      '
