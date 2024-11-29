@@ -16,8 +16,8 @@ deploy:
   script:
     - echo "$SSH_PRIVATE_KEY" > private_key.pem
     - chmod 600 private_key.pem
-    - scp -i private_key.pem -o StrictHostKeyChecking=no -r ./* root@$SERVER_IP:~/deploy
-    - ssh -i private_key.pem -o StrictHostKeyChecking=no root@$SERVER_IP "
+    - scp -i private_key.pem -o StrictHostKeyChecking=no -r ./* root@[$SERVER_IP]:~/deploy
+    - ssh -i private_key.pem -o StrictHostKeyChecking=no root@[$SERVER_IP] "
         pkill -f python_bot.py || true &&
         cd ~/deploy &&
         echo 'Starting new bot process...' &&
