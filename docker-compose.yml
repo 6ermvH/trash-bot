@@ -1,0 +1,11 @@
+services:
+  telegram-bot:
+    build:
+      context: .
+    container_name: telegram-bot
+    environment:
+      - TELEGRAM_TOKEN=ваш_токен
+    volumes:
+      - .:/app
+    command: python3 bot.py
+
