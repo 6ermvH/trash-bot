@@ -33,9 +33,9 @@ func main() {
 		DB:       0,
 	})
 
+	go InitTelegramAPI()
+
 	server()
 
-	for true {
-		InitTelegramAPI()
-	}
+	select {}
 }
