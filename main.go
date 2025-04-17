@@ -2,19 +2,14 @@ package main
 
 import (
 	"os"
+	"net/http"
+	"fmt"
+	"log"
 
 	"github.com/redis/go-redis/v9"
 )
 
 func main() {
-	rdb = redis.NewClient(&redis.Options{
-		Addr:     os.Getenv("REDIS_ADDR"),
-		Password: "",
-		DB:       0,
-	})
-
-	go InitTelegramAPI()
-
 	go func() {
 		port := os.Getenv("PORT")
 		if port == "" {
@@ -30,4 +25,12 @@ func main() {
 			log.Fatalf("❌ HTTP server error: %v", err)
 		}
 	}()
+
+
+	rdb = redis.NewClient(&redis.Options{
+		Addr:     os.Getenv("REDIS_ADDR"),
+		Password: "",
+		DB:       0,
+	})
+	InitTelegramAPI()
 }
