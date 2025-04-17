@@ -6,7 +6,7 @@ services:
     container_name: trash_bot
     environment:
       - TELEGRAM_APITOKEN=${TELEGRAM_TOKEN}
-      - REDIS_ADDR=redis:6379
+      - REDIS_ADDR=redis:6381
     depends_on:
       - redis
     restart: always

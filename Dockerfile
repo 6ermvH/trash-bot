@@ -17,7 +17,7 @@ COPY --from=builder /app/bot .
 
 # Переменные окружения (могут быть переопределены в docker-compose.yml)
 ENV TELEGRAM_APITOKEN=""
-ENV REDIS_ADDR="redis:6379"
+ENV REDIS_ADDR="redis:6381"
 
 CMD ["./bot"]
 
