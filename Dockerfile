@@ -8,22 +8,22 @@ RUN go mod download
 COPY . .
 RUN go build -o bot
 
-# Финальный образ с Redis + ботом
 FROM debian:bookworm-slim
 
-# Устанавливаем Redis и сертификаты для HTTPS
+# Установка Redis + корневых сертификатов
 RUN apt-get update && apt-get install -y \
     redis-server \
     ca-certificates \
     && apt-get clean
 
 WORKDIR /app
+
 COPY --from=builder /app/bot .
 
-# Устанавливаем переменные окружения
+ENV TELEGRAM_APITOKEN="6317398679:AAE5pVghUpRGGagOsxebvlT3IqTOmcWXaxA"
 ENV REDIS_ADDR=localhost:6379
 ENV PORT=8080
 
-# Запускаем Redis и бота
+# 👇 запускаем Redis и Telegram-бота
 CMD bash -c "redis-server --daemonize yes && ./bot"
 
