@@ -12,9 +12,4 @@ services:
   redis:
     image: redis:7
     container_name: redis
-    volumes:
-      - redis-data:/data
-
-volumes:
-  redis-data:
 
