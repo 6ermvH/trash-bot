@@ -1,33 +1,25 @@
 package main
 
 import (
+	"fmt"
+	"log"
+	"net/http"
 	"os"
-
-	"github.com/redis/go-redis/v9"
 )
 
 func main() {
-	rdb = redis.NewClient(&redis.Options{
-		Addr:     os.Getenv("REDIS_ADDR"),
-		Password: "",
-		DB:       0,
-	})
-	go InitTelegramAPI()
-
-	startHTTPHealthServer()
-}
-
-func startHTTPHealthServer() {
 	port := os.Getenv("PORT")
 	if port == "" {
 		port = "8080"
 	}
 
 	http.HandleFunc("/", func(w http.ResponseWriter, r *http.Request) {
-		fmt.Fprintln(w, "Bot is alive")
+		fmt.Fprintln(w, "✅ Bot container is alive")
 	})
 
+	log.Println("🌐 Listening on port", port)
 	if err := http.ListenAndServe(":"+port, nil); err != nil {
-		panic(err)
+		log.Fatalf("❌ HTTP error: %v", err)
 	}
 }
+
