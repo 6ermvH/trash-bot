@@ -1,3 +1,5 @@
+version: '3.9'
+
 services:
   bot:
     build: .
@@ -5,6 +7,7 @@ services:
     environment:
       - TELEGRAM_APITOKEN=${TELEGRAM_APITOKEN}
       - REDIS_ADDR=redis:6379
+      - PORT=8080
     ports:
       - "8080:8080"
     depends_on:
