@@ -33,10 +33,7 @@ func main() {
 	})
 
 	go InitTelegramAPI()
-
-	for true {
-		server()
-	}
+	go server()
 
 	select {}
 }
