@@ -8,16 +8,22 @@ RUN go mod download
 COPY . .
 RUN go build -o bot
 
+# Финальный образ с Redis + ботом
 FROM debian:bookworm-slim
 
-RUN apt-get update && apt-get install -y ca-certificates && apt-get clean
+# Устанавливаем Redis и сертификаты для HTTPS
+RUN apt-get update && apt-get install -y \
+    redis-server \
+    ca-certificates \
+    && apt-get clean
 
 WORKDIR /app
 COPY --from=builder /app/bot .
 
-# Переменные окружения (могут быть переопределены в docker-compose.yml)
-ENV TELEGRAM_APITOKEN=""
-ENV REDIS_ADDR="redis:6381"
+# Устанавливаем переменные окружения
+ENV REDIS_ADDR=localhost:6379
+ENV PORT=8080
 
-CMD ["./bot"]
+# Запускаем Redis и бота
+CMD bash -c "redis-server --daemonize yes && ./bot"
 
