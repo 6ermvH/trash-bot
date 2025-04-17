@@ -1,26 +1,28 @@
 package main
 
 import (
-	"os"
-	"net/http"
 	"fmt"
 	"log"
+	"net/http"
+	"os"
 
 	"github.com/redis/go-redis/v9"
 )
 
 func server() {
-	http.HandleFunc("/", func(w http.ResponseWriter, r *http.Request) {
-		w.WriteHeader(http.StatusOK)
-		fmt.Fprintln(w, "✅ Telegram bot is alive!")
-	})
-
 	port := os.Getenv("PORT")
 	if port == "" {
 		port = "8080"
 	}
-	log.Println("Listening on port:", port)
-	log.Fatal(http.ListenAndServe(":"+port, nil)) // 🔥 блокирует main()
+	http.HandleFunc("/", func(w http.ResponseWriter, r *http.Request) {
+		w.WriteHeader(http.StatusOK)
+		fmt.Fprintln(w, "✅ Telegram bot is alive")
+	})
+
+	log.Printf("🌐 Listening on port %s", port)
+	if err := http.ListenAndServe(":"+port, nil); err != nil {
+		log.Printf("⚠️ HTTP server error: %v", err)
+	}
 }
 
 func main() {
@@ -33,4 +35,6 @@ func main() {
 	go InitTelegramAPI()
 
 	server()
+
+	select {}
 }
