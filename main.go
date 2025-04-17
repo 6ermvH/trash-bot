@@ -35,5 +35,5 @@ func main() {
 
 	server()
 
-	select {}
+	for true {}
 }
