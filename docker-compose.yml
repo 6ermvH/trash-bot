@@ -1,11 +1,20 @@
 services:
-  telegram-bot:
-    build:
-      context: .
-    container_name: telegram-bot
+  bot:
+    build: .
+    container_name: trash_bot
     environment:
-      - TELEGRAM_TOKEN=ваш_токен
+      - TELEGRAM_APITOKEN=${TELEGRAM_APITOKEN}
+      - REDIS_ADDR=redis:6379
+    depends_on:
+      - redis
+    restart: always
+
+  redis:
+    image: redis:7
+    container_name: redis
     volumes:
-      - .:/app
-    command: python3 bot.py
+      - redis-data:/data
+
+volumes:
+  redis-data:
 

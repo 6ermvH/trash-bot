@@ -1,20 +1,23 @@
-# Используем минимальный образ Python
-FROM python:3.10-slim
+FROM golang:1.21 as builder
 
-EXPOSE 8080
-
-# Устанавливаем рабочую директорию в контейнере
 WORKDIR /app
 
-# Копируем файл с зависимостями (если есть requirements.txt)
-COPY requirements.txt ./
+COPY go.mod go.sum ./
+RUN go mod download
 
-# Устанавливаем зависимости (указанные в requirements.txt)
-RUN pip install --no-cache-dir -r requirements.txt
-
-# Копируем файлы вашего проекта в контейнер
 COPY . .
+RUN go build -o bot
 
-# Определяем команду запуска контейнера
-CMD ["python3", "bot.py"]
+FROM debian:bookworm-slim
+
+RUN apt-get update && apt-get install -y ca-certificates && apt-get clean
+
+WORKDIR /app
+COPY --from=builder /app/bot .
+
+# Переменные окружения (могут быть переопределены в docker-compose.yml)
+ENV TELEGRAM_APITOKEN=""
+ENV REDIS_ADDR="redis:6379"
+
+CMD ["./bot"]
 
