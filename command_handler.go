@@ -63,13 +63,13 @@ func InitTelegramAPI() {
 			}
 
 			if _, err := bot.Send(msg); err != nil {
-				log.Panic(err)
+				log.Printf("telegram API error: %v", err)
 			}
 
 		} else if update.CallbackQuery != nil {
 			callback := tgbotapi.NewCallback(update.CallbackQuery.ID, update.CallbackQuery.Data)
 			if _, err := bot.Request(callback); err != nil {
-				panic(err)
+				log.Printf("telegram API error: %v", err)
 			}
 
 			data := ""
