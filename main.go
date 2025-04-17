@@ -16,6 +16,7 @@ func server() {
 	}
 
 	http.HandleFunc("/", func(w http.ResponseWriter, r *http.Request) {
+		w.WriteHeader(http.StatusOK) // ✅ Явно указываем 200 OK
 		fmt.Fprintln(w, "✅ Telegram bot is alive!")
 	})
 
@@ -31,9 +32,10 @@ func main() {
 		Password: "",
 		DB:       0,
 	})
-	go InitTelegramAPI()
 
 	server()
 
-	for true {}
+	for true {
+		InitTelegramAPI()
+	}
 }
