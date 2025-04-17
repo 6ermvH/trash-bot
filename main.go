@@ -1,25 +1,16 @@
 package main
 
 import (
-	"fmt"
-	"log"
-	"net/http"
 	"os"
+
+	"github.com/redis/go-redis/v9"
 )
 
 func main() {
-	port := os.Getenv("PORT")
-	if port == "" {
-		port = "8080"
-	}
-
-	http.HandleFunc("/", func(w http.ResponseWriter, r *http.Request) {
-		fmt.Fprintln(w, "✅ Bot container is alive")
+	rdb = redis.NewClient(&redis.Options{
+		Addr:     os.Getenv("REDIS_ADDR"),
+		Password: "",
+		DB:       0,
 	})
-
-	log.Println("🌐 Listening on port", port)
-	if err := http.ListenAndServe(":"+port, nil); err != nil {
-		log.Fatalf("❌ HTTP error: %v", err)
-	}
+	InitTelegramAPI()
 }
-
