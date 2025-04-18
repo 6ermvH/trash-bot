@@ -5,6 +5,7 @@ services:
     environment:
       - TELEGRAM_APITOKEN=${TELEGRAM_APITOKEN}
       - REDIS_ADDR=${REDIS_ADDR}
+      - REDIS_USERNAME=${REDIS_USERNAME}
       - REDIS_PASSWORD=${REDIS_PASSWORD}
     restart: always
     ports:

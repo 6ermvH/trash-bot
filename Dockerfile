@@ -26,6 +26,7 @@ RUN chmod +x /app/bot
 
 ENV TELEGRAM_APITOKEN=""
 ENV REDIS_ADDR=""
+ENV REDIS_USERNAME=""
 ENV REDIS_PASSWORD=""
 
 CMD ["/app/bot"]
