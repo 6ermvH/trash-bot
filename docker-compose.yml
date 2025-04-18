@@ -1,18 +1,11 @@
-version: '3.9'
-
 services:
   bot:
     build: .
     container_name: trash_bot
     environment:
       - TELEGRAM_APITOKEN=${TELEGRAM_APITOKEN}
-      - REDIS_ADDR=redis:6379
-    depends_on:
-      - redis
+      - REDIS_ADDR=${REDIS_ADDR}
+      - REDIS_PASSWORD=${REDIS_PASSWORD}
     restart: always
     ports:
       - "8080:8080"
-
-  redis:
-    image: redis:7
-    container_name: redis
