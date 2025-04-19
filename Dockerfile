@@ -24,9 +24,4 @@ COPY --from=builder /app/bot /app/bot
 
 RUN chmod +x /app/bot
 
-ENV TELEGRAM_APITOKEN=""
-ENV REDIS_ADDR="154.194.53.129:6379"
-ENV REDIS_USERNAME="default"
-ENV REDIS_PASSWORD=""
-
 CMD ["/app/bot"]

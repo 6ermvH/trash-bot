@@ -11,6 +11,8 @@ import (
 var numericKeyboard = tgbotapi.NewInlineKeyboardMarkup(
 	tgbotapi.NewInlineKeyboardRow(
 		tgbotapi.NewInlineKeyboardButtonData("Кто выносит мусор", "who"),
+	),
+	tgbotapi.NewInlineKeyboardRow(
 		tgbotapi.NewInlineKeyboardButtonData("Вынес мусор", "next"),
 	),
 )
@@ -57,6 +59,8 @@ func InitTelegramAPI() {
 				builder.WriteString("/next переход на следующего\n")
 				builder.WriteString("/prev переход на предыдущего")
 				msg.Text = builder.String()
+			case "hi_anthon":
+				msg.Text = "Exactly!!!"
 
 			default:
 				msg.Text = "I don't know that command"
