@@ -11,8 +11,6 @@ COPY . ./
 
 RUN CGO_ENABLED=0 GOOS=linux go build -ldflags="-s -w" -o trash_bot ./cmd/bot
 
-USER 1000:1000
-
 ENV PORT=8080
 
 ENTRYPOINT ["/app/trash_bot"]
