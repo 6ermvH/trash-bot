@@ -9,8 +9,6 @@ services:
       - REDIS_PASSWORD=
       - TELEGRAM_APITOKEN=${TELEGRAM_APITOKEN}
       - OPENROUTER_API_KEY=${OPENROUTER_API_KEY}
-    depends_on:
-      - redis
     ports:
       - "8080:8080"
     restart: always
