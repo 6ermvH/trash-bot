@@ -1,27 +1,16 @@
-FROM golang:1.21 as builder
+FROM golang:1.21-alpine
 
 WORKDIR /app
-
-EXPOSE 8080
 
 COPY go.mod go.sum ./
 RUN go mod download
 
-COPY . .
+COPY . ./
 
-RUN go build -o /app/bot .
+RUN CGO_ENABLED=0 GOOS=linux go build -ldflags="-s -w" -o trash_bot ./cmd/bot
 
-FROM debian:bookworm-slim
+USER 1000:1000
 
-RUN apt-get update && apt-get install -y \
-    ca-certificates \
-    redis-server \
-    && apt-get clean
+ENV PORT=8080
 
-WORKDIR /app
-
-COPY --from=builder /app/bot /app/bot
-
-RUN chmod +x /app/bot
-
-CMD ["/app/bot"]
+ENTRYPOINT ["/app/trash_bot"]

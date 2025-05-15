@@ -1,0 +1,27 @@
+version: '3.8'
+services:
+  bot:
+    build: .
+    image: trash_bot:latest
+    container_name: trash_bot
+    environment:
+      - PORT=8080
+      - REDIS_ADDR=redis:6379
+      - REDIS_USERNAME=
+      - REDIS_PASSWORD=
+      - TELEGRAM_APITOKEN=${TELEGRAM_APITOKEN}
+      - OPENROUTER_API_KEY=${OPENROUTER_API_KEY}
+    depends_on:
+      - redis
+    restart: unless-stopped
+  redis:
+    image: redis:7-alpine
+    container_name: trash_redis
+    command: ["redis-server", "--appendonly", "yes"]
+    volumes:
+      - redis-data:/data
+    restart: unless-stopped
+volumes:
+  redis-data:
+    driver: local
+
