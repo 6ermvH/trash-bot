@@ -1,16 +1,24 @@
 FROM golang:1.21-alpine
 
-EXPOSE 8080
-
+# Устанавливаем рабочую директорию
 WORKDIR /app
 
+# Копируем модули и загружаем зависимости
 COPY go.mod go.sum ./
 RUN go mod download
 
+# Копируем остальной код
 COPY . ./
 
-RUN CGO_ENABLED=0 GOOS=linux go build -ldflags="-s -w" -o trash_bot ./cmd/bot
+# Собираем приложение
+RUN go build -ldflags="-s -w" -o trash_bot ./cmd/bot
 
+# Убираем потенциально конфликтную строку на Timeweb
+# USER 1000:1000
+
+# Порт
 ENV PORT=8080
 
+# Точка входа
 ENTRYPOINT ["/app/trash_bot"]
+
