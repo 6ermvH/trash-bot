@@ -1,7 +1,7 @@
 FROM golang:1.21-alpine
 
 # Устанавливаем рабочую директорию
-WORKDIR /
+WORKDIR /app
 
 # Копируем модули и загружаем зависимости
 COPY go.mod go.sum ./
@@ -13,7 +13,7 @@ COPY . ./
 # Собираем приложение
 RUN go build -ldflags="-s -w" -o trash_bot ./cmd/bot
 
-ENV PORT=8080
+ENV PORT=8020
 
 # Точка входа
 ENTRYPOINT ["/app/trash_bot"]
