@@ -1,7 +1,7 @@
 FROM golang:1.21-alpine
 
 # Устанавливаем рабочую директорию
-WORKDIR /app
+WORKDIR /
 
 # Копируем модули и загружаем зависимости
 COPY go.mod go.sum ./
@@ -13,10 +13,6 @@ COPY . ./
 # Собираем приложение
 RUN go build -ldflags="-s -w" -o trash_bot ./cmd/bot
 
-# Убираем потенциально конфликтную строку на Timeweb
-# USER 1000:1000
-
-# Порт
 ENV PORT=8080
 
 # Точка входа
