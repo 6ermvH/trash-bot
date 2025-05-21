@@ -8,7 +8,6 @@ COPY go.mod go.sum ./
 RUN go mod download
 
 COPY . .
-COPY ./config/server.yaml ./config/server.yaml
 RUN go build -ldflags="-s -w" -o trash_bot ./cmd/bot
 
 # Подключение переменных окружения
