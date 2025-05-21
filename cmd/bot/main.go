@@ -3,6 +3,7 @@ package main
 import (
 	"context"
 	"log"
+	"os"
 
 	"github.com/redis/go-redis/v9"
 	"gitlab.com/6ermvH/trash_bot/internal/config"
@@ -13,7 +14,7 @@ import (
 
 func main() {
 	// Load configuration from environment
-	cfg, err := config.Load()
+	cfg, err := config.Load(os.Getenv("CONFIG_PATH"))
 	if err != nil {
 		log.Fatalf("config load error: %v", err)
 	}
