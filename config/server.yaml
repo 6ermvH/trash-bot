@@ -1,0 +1,9 @@
+redis:
+  addr: "192.168.0.5:6379"
+  db: 1
+
+telegram: {}
+
+server:
+  port: "8080"
+
