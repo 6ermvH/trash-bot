@@ -2,16 +2,26 @@ stages:
   - setup
   - build
 
+variables:
+  DOCKER_HOST: tcp://docker:2375/
+  DOCKER_TLS_CERTDIR: ""
+
 setup-job:
   stage: setup
+  image: docker:20.10.16
+  services:
+    - docker:dind
   script:
-    - sudo apt update
-    - sudo apt install docker-compose
-    - sudo systemctl start docker.service
-
+    - apk add --no-cache docker-compose  # Используется Alpine, не apt
+    - docker-compose version
 
 build-job:
   stage: build
+  image: docker:20.10.16
+  services:
+    - docker:dind
   script:
-    - docker-compose --build
-    - echo "Compile complete successfull!"
+    - apk add --no-cache docker-compose
+    - docker-compose build
+    - echo "Compile completed successfully!"
+
