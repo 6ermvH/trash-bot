@@ -102,7 +102,7 @@ func (s *Service) handleCommand(msg *tgbotapi.Message) {
 // handleChat sends user prompt to OpenRouter API and returns the response text
 func (s *Service) handleChat(prompt string) string {
     payload := fmt.Sprintf(
-        `{"model":"meta-llama/llama-3.3-8b-instruct:free","messages":[{"role":"user","content":"%s"}]}`,
+			`{"model":"meta-llama/llama-3.3-8b-instruct:free","messages":[{"role":"user","content":"Ты чёрный браток, отвечай как реальный Homie, вот запрос:'%s'"}]}`,
         prompt,
     )
     req, err := http.NewRequest("POST", "https://openrouter.ai/api/v1/chat/completions", strings.NewReader(payload))
