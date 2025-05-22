@@ -1,0 +1,17 @@
+stages:
+  - setup
+  - build
+
+setup-job:
+  stage: setup
+  script:
+    - sudo apt update
+    - sudo apt install docker-compose
+    - sudo systemctl start docker.service
+
+
+build-job:
+  stage: build
+  script:
+    - docker-compose --build
+    - echo "Compile complete successfull!"
