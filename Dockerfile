@@ -1,27 +1,24 @@
-FROM golang:1.21 as builder
-
-WORKDIR /app
+FROM golang:1.21-alpine
 
 EXPOSE 8080
+
+WORKDIR /app
 
 COPY go.mod go.sum ./
 RUN go mod download
 
-COPY . .
+COPY internal ./internal
+COPY cmd ./cmd
 
-RUN go build -o /app/bot .
+COPY config ./config
 
-FROM debian:bookworm-slim
+ENV REDIS_USERNAME=${REDIS_USERNAME}
+ENV REDIS_PASSWORD=${REDIS_PASSWORD}
+ENV TELEGRAM_APITOKEN=${TELEGRAM_APITOKEN}
+ENV OPENROUTER_API_KEY=${OPENROUTER_API_KEY}
+ENV CONFIG_PATH=${CONFIG_PATH}
 
-RUN apt-get update && apt-get install -y \
-    ca-certificates \
-    redis-server \
-    && apt-get clean
+RUN go build -ldflags="-s -w" -o ./trash_bot ./cmd/bot
 
-WORKDIR /app
+ENTRYPOINT ["/app/trash_bot"]
 
-COPY --from=builder /app/bot /app/bot
-
-RUN chmod +x /app/bot
-
-CMD ["/app/bot"]
