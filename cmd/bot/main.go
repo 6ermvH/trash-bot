@@ -2,7 +2,7 @@ package main
 
 import (
 	"context"
-	"log"
+	"log/slog"
 	"os"
 
 	"github.com/redis/go-redis/v9"
@@ -13,11 +13,16 @@ import (
 )
 
 func main() {
+	logger := slog.New(slog.NewJSONHandler(os.Stdout, nil))
+
 	// Load configuration from environment
 	cfg, err := config.Load(os.Getenv("CONFIG_PATH"))
 	if err != nil {
-		log.Fatalf("config load error: %v", err)
+		logger.Error("config load error", "error", err)
+		os.Exit(1)
 	}
+
+	logger.Info("config loaded")
 
 	// Initialize Redis client
 	rdb := redis.NewClient(&redis.Options{
@@ -29,18 +34,24 @@ func main() {
 	defer rdb.Close()
 
 	if _, err := rdb.Ping(context.Background()).Result(); err != nil {
-		log.Fatalf("redis connect error: %v", err)
+		logger.Error("redis connect error", "error", err)
+		os.Exit(1)
 	}
+	logger.Info("redis connected")
 
 	// Start healthcheck HTTP server
 	go server.Start(cfg.Server)
+	logger.Info("healthcheck server started")
 
 	// Initialize storage manager
-	storeMgr := store.NewStore(rdb)
+	storeMgr := store.NewStore(rdb, logger)
+	logger.Info("storage manager initialized")
 
 	// Initialize and run Telegram bot
-	botService := telegram.NewService(cfg.Telegram.Token, storeMgr, cfg.OpenRouterAPIKey)
+	botService := telegram.NewService(logger, cfg.Telegram.Token, storeMgr, cfg.OpenRouterAPIKey)
+	logger.Info("telegram bot service initialized, starting...")
 	if err := botService.Run(context.Background()); err != nil {
-		log.Fatalf("telegram bot error: %v", err)
+		logger.Error("telegram bot error", "error", err)
+		os.Exit(1)
 	}
 }

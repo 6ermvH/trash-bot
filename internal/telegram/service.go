@@ -1,19 +1,82 @@
 package telegram
 
 import (
+	"bytes"
 	"context"
 	"encoding/json"
 	"fmt"
-	"log"
+	"log/slog"
 	"net/http"
+	"os"
 	"strings"
 
 	tgbotapi "github.com/go-telegram-bot-api/telegram-bot-api/v5"
 	"gitlab.com/6ermvH/trash_bot/internal/store"
 )
 
+// --- Constants for user-facing messages and API details ---
+
+const (
+	// --- Command-related text ---
+	msgStart           = "Выберите действие:"
+	msgHey             = "Exactly!!!"
+	msgEstablishSet    = "Список пользователей обновлён"
+	msgEstablishErr    = "Ошибка при установке списка пользователей"
+	msgUserAdded       = "Пользователь %s добавлен в список"
+	msgUserAddErr      = "Ошибка при добавлении: %v"
+	msgUserAddUsage    = "Укажите имя пользователя. Пример: /add_user @nickname"
+	msgUserRemoved     = "Пользователь %s удалён из списка"
+	msgUserRemoveErr   = "Ошибка при удалении: %v"
+	msgUserRemoveUsage = "Укажите имя пользователя. Пример: /remove_user @nickname"
+	msgNext            = "Теперь мусор выносит: %s"
+	msgNextErr         = "Невозможно перейти на следующего"
+	msgPrev            = "Теперь мусор выносит: %s"
+	msgPrevErr         = "Невозможно перейти на предыдущего"
+	msgWho             = "Мусор выносит: %s"
+	msgWhoErr          = "Не удалось получить текущее имя"
+	msgUnknownCmd      = "Неизвестная команда. Используйте /help"
+
+	// --- Callback-related text ---
+	msgCallbackWhoErr  = "Ошибка при получении пользователя"
+	msgCallbackNextErr = "Ошибка при переходе к следующему"
+
+	// --- Chat-related text ---
+	msgChatDisabled    = "Ключ OpenRouter API не настроен."
+	msgChatRequestErr  = "Ошибка при формировании запроса к чату"
+	msgChatClientErr   = "Ошибка при обращении к чату"
+	msgChatDecodeErr   = "Ошибка при разборе ответа чата"
+	msgChatEmptyResp   = "Пустой ответ от чата"
+	msgChatPayloadErr  = "Ошибка при подготовке запроса к чату"
+
+	// --- OpenRouter API ---
+	openRouterAPIURL     = "https://openrouter.ai/api/v1/chat/completions"
+	openRouterModel      = "meta-llama/llama-3.3-8b-instruct:free"
+	openRouterPromptTmpl = "Ты чёрный браток, отвечай как реальный Homie, вот запрос:'%s'"
+)
+
+// --- Structs for OpenRouter API ---
+
+type openRouterRequest struct {
+	Model    string          `json:"model"`
+	Messages []openRouterMsg `json:"messages"`
+}
+
+type openRouterMsg struct {
+	Role    string `json:"role"`
+	Content string `json:"content"`
+}
+
+type openRouterResponse struct {
+	Choices []struct {
+		Message struct {
+			Content string `json:"content"`
+		} `json:"message"`
+	} `json:"choices"`
+}
+
 // Service holds bot API, store manager, HTTP client, and OpenRouter key
 type Service struct {
+	logger        *slog.Logger
 	bot           *tgbotapi.BotAPI
 	store         *store.Store
 	httpClient    *http.Client
@@ -21,13 +84,15 @@ type Service struct {
 }
 
 // NewService creates a new Telegram service with dependencies
-func NewService(token string, storeMgr *store.Store, openRouterKey string) *Service {
+func NewService(logger *slog.Logger, token string, storeMgr *store.Store, openRouterKey string) *Service {
 	bot, err := tgbotapi.NewBotAPI(token)
 	if err != nil {
-		log.Panicf("failed to create bot: %v", err)
+		logger.Error("failed to create bot", "error", err)
+		os.Exit(1)
 	}
 	bot.Debug = false
 	return &Service{
+		logger:        logger,
 		bot:           bot,
 		store:         storeMgr,
 		httpClient:    &http.Client{},
@@ -48,132 +113,202 @@ func (s *Service) Run(ctx context.Context) error {
 	return nil
 }
 
-// handleCommand processes incoming slash commands
+// --- Command Handlers ---
+
+// handleCommand processes incoming slash commands by dispatching to specific handlers
 func (s *Service) handleCommand(msg *tgbotapi.Message) {
-	chatID := msg.Chat.ID
+	s.logger.Info("handling command", "command", msg.Command(), "from", msg.From.UserName, "chat_id", msg.Chat.ID)
 	var text string
+	var markup interface{} // Can be keyboard or nil
 
 	switch msg.Command() {
 	case "start":
-		text = "Выберите действие:"
-		s.sendMessage(chatID, text, commandKeyboard())
-		return
+		text = msgStart
+		markup = commandKeyboard()
 	case "help":
 		text = helpText()
 	case "hey":
-		text = "Exactly!!!"
+		text = msgHey
 	case "set_establish":
-		users := strings.Fields(msg.CommandArguments())
-		if err := s.store.SetEstablish(chatID, users); err != nil {
-			text = "Ошибка при установке списка пользователей"
-		} else {
-			text = "Список пользователей обновлён"
-		}
+		text = s.handleSetEstablish(msg)
+	case "add_user":
+		text = s.handleAddUser(msg)
+	case "remove_user":
+		text = s.handleRemoveUser(msg)
 	case "next":
-		name, err := s.store.Next(chatID)
-		if err != nil {
-			text = "Невозможно перейти на следующего"
-		} else {
-			text = "Теперь мусор выносит: " + name
-		}
+		text = s.handleNext(msg)
 	case "prev":
-		name, err := s.store.Prev(chatID)
-		if err != nil {
-			text = "Невозможно перейти на предыдущего"
-		} else {
-			text = "Теперь мусор выносит: " + name
-		}
+		text = s.handlePrev(msg)
 	case "who":
-		name, err := s.store.Who(chatID)
-		if err != nil {
-			text = "Не удалось получить текущее имя"
-		} else {
-			text = "Мусор выносит: " + name
-		}
+		text = s.handleWho(msg)
 	case "chat":
 		text = s.handleChat(msg.CommandArguments())
 	default:
-		text = "Неизвестная команда. Используйте /help"
+		text = msgUnknownCmd
 	}
 
-	s.sendMessage(chatID, text, tgbotapi.InlineKeyboardMarkup{})
+	s.sendMessage(msg.Chat.ID, text, markup)
 }
+
+func (s *Service) handleSetEstablish(msg *tgbotapi.Message) string {
+	users := strings.Fields(msg.CommandArguments())
+	if err := s.store.SetEstablish(msg.Chat.ID, users); err != nil {
+		return msgEstablishErr
+	}
+	return msgEstablishSet
+}
+
+func (s *Service) handleAddUser(msg *tgbotapi.Message) string {
+	user := msg.CommandArguments()
+	if user == "" {
+		return msgUserAddUsage
+	}
+	if err := s.store.AddUser(msg.Chat.ID, user); err != nil {
+		return fmt.Sprintf(msgUserAddErr, err)
+	}
+	return fmt.Sprintf(msgUserAdded, user)
+}
+
+func (s *Service) handleRemoveUser(msg *tgbotapi.Message) string {
+	user := msg.CommandArguments()
+	if user == "" {
+		return msgUserRemoveUsage
+	}
+	if err := s.store.RemoveUser(msg.Chat.ID, user); err != nil {
+		return fmt.Sprintf(msgUserRemoveErr, err)
+	}
+	return fmt.Sprintf(msgUserRemoved, user)
+}
+
+func (s *Service) handleNext(msg *tgbotapi.Message) string {
+	name, err := s.store.Next(msg.Chat.ID)
+	if err != nil {
+		return msgNextErr
+	}
+	return fmt.Sprintf(msgNext, name)
+}
+
+func (s *Service) handlePrev(msg *tgbotapi.Message) string {
+	name, err := s.store.Prev(msg.Chat.ID)
+	if err != nil {
+		return msgPrevErr
+	}
+	return fmt.Sprintf(msgPrev, name)
+}
+
+func (s *Service) handleWho(msg *tgbotapi.Message) string {
+	name, err := s.store.Who(msg.Chat.ID)
+	if err != nil {
+		return msgWhoErr
+	}
+	return fmt.Sprintf(msgWho, name)
+}
+
+// --- Chat Handler ---
 
 // handleChat sends user prompt to OpenRouter API and returns the response text
 func (s *Service) handleChat(prompt string) string {
-    payload := fmt.Sprintf(
-			`{"model":"meta-llama/llama-3.3-8b-instruct:free","messages":[{"role":"user","content":"Ты чёрный браток, отвечай как реальный Homie, вот запрос:'%s'"}]}`,
-        prompt,
-    )
-    req, err := http.NewRequest("POST", "https://openrouter.ai/api/v1/chat/completions", strings.NewReader(payload))
-    if err != nil {
-        return "Ошибка при формировании запроса к чату"
-    }
-    req.Header.Set("Content-Type", "application/json")
-    req.Header.Set("Authorization", "Bearer "+s.openRouterKey)
+	if s.openRouterKey == "" {
+		return msgChatDisabled
+	}
 
-    resp, err := s.httpClient.Do(req)
-    if err != nil {
-        return "Ошибка при обращении к чату"
-    }
-    defer resp.Body.Close()
+	requestBody := openRouterRequest{
+		Model: openRouterModel,
+		Messages: []openRouterMsg{
+			{
+				Role:    "user",
+				Content: fmt.Sprintf(openRouterPromptTmpl, prompt),
+			},
+		},
+	}
 
-    var orResp struct {
-        Choices []struct {
-            Message struct {
-                Content string `json:"content"`
-            } `json:"message"`
-        } `json:"choices"`
-    }
-    if err := json.NewDecoder(resp.Body).Decode(&orResp); err != nil {
-        return "Ошибка при разборе ответа чата"
-    }
-    if len(orResp.Choices) > 0 {
-        return orResp.Choices[0].Message.Content
-    }
-    return "Пустой ответ от чата"
+	payloadBytes, err := json.Marshal(requestBody)
+	if err != nil {
+		s.logger.Error("chat payload marshal error", "error", err)
+		return msgChatPayloadErr
+	}
+
+	req, err := http.NewRequest("POST", openRouterAPIURL, bytes.NewReader(payloadBytes))
+	if err != nil {
+		s.logger.Error("chat http request create error", "error", err)
+		return msgChatRequestErr
+	}
+	req.Header.Set("Content-Type", "application/json")
+	req.Header.Set("Authorization", "Bearer "+s.openRouterKey)
+
+	resp, err := s.httpClient.Do(req)
+	if err != nil {
+		s.logger.Error("chat http client error", "error", err)
+		return msgChatClientErr
+	}
+	defer resp.Body.Close()
+
+	var orResp openRouterResponse
+	if err := json.NewDecoder(resp.Body).Decode(&orResp); err != nil {
+		s.logger.Error("chat response decode error", "error", err)
+		return msgChatDecodeErr
+	}
+	if len(orResp.Choices) > 0 && orResp.Choices[0].Message.Content != "" {
+		return orResp.Choices[0].Message.Content
+	}
+	return msgChatEmptyResp
 }
+
+// --- Callback Handler ---
+
 // handleCallback processes inline button callbacks
 func (s *Service) handleCallback(cb *tgbotapi.CallbackQuery) {
-	chatID := cb.Message.Chat.ID
+	s.logger.Info("handling callback", "data", cb.Data, "from", cb.From.UserName, "chat_id", cb.Message.Chat.ID)
 	var text string
 
 	switch cb.Data {
 	case "who":
-		name, err := s.store.Who(chatID)
+		name, err := s.store.Who(cb.Message.Chat.ID)
 		if err != nil {
-			text = "Ошибка при получении пользователя"
+			text = msgCallbackWhoErr
 		} else {
-			text = "Мусор выносит: " + name
+			text = fmt.Sprintf(msgWho, name)
 		}
 	case "next":
-		name, err := s.store.Next(chatID)
+		name, err := s.store.Next(cb.Message.Chat.ID)
 		if err != nil {
-			text = "Ошибка при переходе к следующему"
+			text = msgCallbackNextErr
 		} else {
-			text = "Теперь мусор выносит: " + name
+			text = fmt.Sprintf(msgNext, name)
 		}
 	default:
-		text = ""
+		// Do nothing for unknown callbacks, just acknowledge
+		if _, err := s.bot.Request(tgbotapi.NewCallback(cb.ID, "")); err != nil {
+			s.logger.Error("callback ack error", "error", err)
+		}
+		return
 	}
 
+	// Acknowledge the callback
 	if _, err := s.bot.Request(tgbotapi.NewCallback(cb.ID, cb.Data)); err != nil {
-		log.Printf("callback ack error: %v", err)
+		s.logger.Error("callback ack error", "error", err)
 	}
-	edit := tgbotapi.NewEditMessageText(chatID, cb.Message.MessageID, text)
-	if _, err := s.bot.Send(edit); err != nil {
-		log.Printf("message edit error: %v", err)
+
+	// Edit the message with the result
+	if text != "" {
+		edit := tgbotapi.NewEditMessageText(cb.Message.Chat.ID, cb.Message.MessageID, text)
+		if _, err := s.bot.Send(edit); err != nil {
+			s.logger.Error("message edit error", "error", err)
+		}
 	}
 }
 
-// sendMessage wraps sending a text message with optional reply markup with optional reply markup
-func (s *Service) sendMessage(chatID int64, text string, markup tgbotapi.InlineKeyboardMarkup) {
+// --- Helpers ---
+
+// sendMessage wraps sending a text message with optional reply markup
+func (s *Service) sendMessage(chatID int64, text string, markup interface{}) {
 	msg := tgbotapi.NewMessage(chatID, text)
-	if len(markup.InlineKeyboard) > 0 {
-		msg.ReplyMarkup = &markup
+	if markup != nil {
+		msg.ReplyMarkup = markup
 	}
+	s.logger.Info("sending message", "chat_id", chatID, "text", text)
 	if _, err := s.bot.Send(msg); err != nil {
-		log.Printf("send message error: %v", err)
+		s.logger.Error("send message error", "error", err)
 	}
 }
 
@@ -191,12 +326,15 @@ func commandKeyboard() tgbotapi.InlineKeyboardMarkup {
 
 // helpText returns help message string
 func helpText() string {
-	return "/help - показать помощь\n" +
-		"/start - начать работу бота\n" +
-		"/set_establish [users] - задать список пользователей\n" +
-		"/who - кто сейчас\n" +
-		"/next - следующий пользователь\n" +
-		"/prev - предыдущий пользователь\n" +
-		"/chat [text] - общение через AI\n" +
-		"/hey - ответ от бота\n"
+	return `/help - показать помощь
+/start - начать работу бота
+/set_establish [users] - задать/перезаписать список пользователей
+/add_user [user] - добавить пользователя в конец списка
+/remove_user [user] - удалить пользователя из списка
+/who - кто сейчас
+/next - следующий пользователь
+/prev - предыдущий пользователь
+/chat [text] - общение через AI
+/hey - ответ от бота
+`
 }
