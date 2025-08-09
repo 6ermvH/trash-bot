@@ -241,7 +241,11 @@ func (s *Service) handleChat(prompt string) string {
 		s.logger.Error("chat http client error", "error", err)
 		return msgChatClientErr
 	}
-	defer resp.Body.Close()
+	defer func() {
+		if err := resp.Body.Close(); err != nil {
+			s.logger.Error("response body close error", "error", err)
+		}
+	}()
 
 	var orResp openRouterResponse
 	if err := json.NewDecoder(resp.Body).Decode(&orResp); err != nil {

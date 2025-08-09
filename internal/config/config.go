@@ -2,7 +2,6 @@ package config
 
 import (
 	"os"
-	"io/ioutil"
 
 	"gopkg.in/yaml.v3"
 )
@@ -32,7 +31,7 @@ type ServerConfig struct {
 
 // Load загружает конфиг из YAML и дополняет переменными окружения
 func Load(path string) (*Config, error) {
-	data, err := ioutil.ReadFile(path)
+	data, err := os.ReadFile(path)
 	if err != nil {
 		return nil, err
 	}
