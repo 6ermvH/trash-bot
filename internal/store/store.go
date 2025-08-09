@@ -82,20 +82,27 @@ func (s *Store) ClearUsers(chatID int64) error {
 // SetEstablish clears and sets a new ordered user list for the chat
 func (s *Store) SetEstablish(chatID int64, users []string) error {
 	s.logger.Info("setting establish", "chat_id", chatID, "users", users)
-	if err := s.ClearUsers(chatID); err != nil {
-		s.logger.Error("failed to clear users", "error", err)
-		return err
-	}
-	if err := s.SetActiveIndex(chatID, 0); err != nil {
-		s.logger.Error("failed to set active index", "error", err)
-		return err
-	}
-	for _, u := range users {
-		if err := s.AddUser(chatID, u); err != nil {
-			s.logger.Error("failed to add user", "error", err)
-			return err
+	key := fmt.Sprintf("chat:%d:users", chatID)
+
+	// Use a transaction to ensure atomicity
+	pipe := s.rdb.TxPipeline()
+	pipe.Del(s.ctx, key)
+	if len(users) > 0 {
+		// Convert []string to []interface{} for RPush
+		userInterfaces := make([]interface{}, len(users))
+		for i, u := range users {
+			userInterfaces[i] = u
 		}
+		pipe.RPush(s.ctx, key, userInterfaces...)
 	}
+	pipe.Set(s.ctx, fmt.Sprintf("chat:%d:active_index", chatID), 0, 0)
+
+	_, err := pipe.Exec(s.ctx)
+	if err != nil {
+		s.logger.Error("failed to set establish in transaction", "error", err)
+		return err
+	}
+
 	return nil
 }
 

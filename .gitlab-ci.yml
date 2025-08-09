@@ -16,6 +16,13 @@ lint:
 test:
   stage: test
   image: golang:1.21-alpine
+  services:
+    - name: redis:7-alpine
+      alias: redis
+  variables:
+    REDIS_ADDR: "redis:6379"
+  before_script:
+    - go get github.com/stretchr/testify
   script:
     - go test ./...
 
