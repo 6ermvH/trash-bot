@@ -1,5 +1,9 @@
 # trash-bot
 
+[![CI](https://img.shields.io/github/actions/workflow/status/6ermvH/trash-bot/ci.yml?branch=main)](https://github.com/6ermvH/trash-bot/actions)
+[![Release](https://img.shields.io/github/v/release/6ermvH/trash-bot)](https://github.com/6ermvH/trash-bot/releases)
+[![Go Version](https://img.shields.io/github/go-mod/go-version/6ermvH/trash-bot)](https://github.com/6ermvH/trash-bot/blob/main/go.mod)
+[![License](https://img.shields.io/github/license/6ermvH/trash-bot)](https://github.com/6ermvH/trash-bot/blob/main/LICENSE)
 [![Go Report Card](https://goreportcard.com/badge/github.com/6ermvH/trash-bot)](https://goreportcard.com/report/github.com/6ermvH/trash-bot)
 [![Codecov](https://codecov.io/gh/6ermvH/trash-bot/branch/main/graph/badge.svg)](https://codecov.io/gh/6ermvH/trash-bot)
 
