@@ -17,6 +17,7 @@ linters:
     - musttag
     - gosec
     - godox
+    - testpackage
 
   exclusions:
     paths:

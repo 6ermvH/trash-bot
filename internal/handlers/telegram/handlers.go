@@ -35,7 +35,7 @@ func (t *TgBotHandler) Start(ctx context.Context, botApi *bot.Bot, update *model
 		ReplyMarkup: t.getKeyboardOnStart(botApi),
 	})
 	if err != nil {
-		log.Printf("Handler Start end with: %v", err.Error())
+		log.Printf("Start. send message: %v", err.Error())
 	}
 }
 
@@ -44,7 +44,7 @@ func (t *TgBotHandler) SetEstablish(ctx context.Context, botApi *bot.Bot, update
 	users := strings.Split(update.Message.Text, " ")[1:]
 
 	if err := t.service.SetEstablish(ctx, chatID, users); err != nil {
-		log.Printf("Handler Start end with: %v", err.Error())
+		log.Printf("SetEstablish. call service: %v", err.Error())
 	}
 
 	_, err := botApi.SendMessage(ctx, &bot.SendMessageParams{
@@ -52,7 +52,7 @@ func (t *TgBotHandler) SetEstablish(ctx context.Context, botApi *bot.Bot, update
 		Text:   "Establish success",
 	})
 	if err != nil {
-		log.Printf("Handler Start end with: %v", err.Error())
+		log.Printf("SetEstablish. send message: %v", err.Error())
 	}
 }
 
@@ -61,14 +61,14 @@ func (t *TgBotHandler) Next(ctx context.Context, botApi *bot.Bot, update *models
 
 	username, err := t.service.Next(ctx, chatID)
 	if err != nil {
-		log.Printf("Handler Next end with: %v", err.Error())
+		log.Printf("Next. call service: %v", err.Error())
 	}
 
 	if _, err := botApi.SendMessage(ctx, &bot.SendMessageParams{
 		ChatID: update.Message.Chat.ID,
 		Text:   username,
 	}); err != nil {
-		log.Printf("Handler Start end with: %v", err.Error())
+		log.Printf("Next. send message: %v", err.Error())
 	}
 }
 
@@ -77,14 +77,14 @@ func (t *TgBotHandler) Prev(ctx context.Context, botApi *bot.Bot, update *models
 
 	username, err := t.service.Prev(ctx, chatID)
 	if err != nil {
-		log.Printf("Handler Prev end with: %v", err.Error())
+		log.Printf("Prev. call service: %v", err.Error())
 	}
 
 	if _, err := botApi.SendMessage(ctx, &bot.SendMessageParams{
 		ChatID: update.Message.Chat.ID,
 		Text:   username,
 	}); err != nil {
-		log.Printf("Handler Prev end with: %v", err.Error())
+		log.Printf("Prev. send message: %v", err.Error())
 	}
 }
 
@@ -93,13 +93,13 @@ func (t *TgBotHandler) Who(ctx context.Context, botApi *bot.Bot, update *models.
 
 	username, err := t.service.Who(ctx, chatID)
 	if err != nil {
-		log.Printf("Handler Who end with: %v", err.Error())
+		log.Printf("Who. call service: %v", err.Error())
 	}
 
 	if _, err := botApi.SendMessage(ctx, &bot.SendMessageParams{
 		ChatID: update.Message.Chat.ID,
 		Text:   username,
 	}); err != nil {
-		log.Printf("Handler Start end with: %v", err.Error())
+		log.Printf("Who. send message: %v", err.Error())
 	}
 }

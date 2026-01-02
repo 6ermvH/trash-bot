@@ -4,9 +4,14 @@ import (
 	"context"
 	"errors"
 	"fmt"
+
+	"github.com/6ermvH/trash-bot/internal/repository"
 )
 
-var ErrChatIsNotInitialize = errors.New("")
+var (
+	ErrTryToInitialize = errors.New("проведите инициализацию при помощи команды /set")
+	ErrTryToAddUsers   = errors.New("добавьте пользователей в список через команду /set")
+)
 
 type Repository interface {
 	GetCurrent(ctx context.Context, chatID int64) (string, error)
@@ -27,18 +32,31 @@ func New(repo Repository) *Service {
 
 func (s *Service) Who(ctx context.Context, chatID int64) (string, error) {
 	username, err := s.repo.GetCurrent(ctx, chatID)
-	switch err {
-	case nil:
+
+	switch {
+	case err == nil:
 		return username, nil
+	case errors.Is(err, repository.ErrChatIsEmpty):
+		return "", ErrTryToAddUsers
+	case errors.Is(err, repository.ErrChatIsNotInitialize):
+		return "", ErrTryToInitialize
 	default:
-		return "", fmt.Errorf("get Who From chat: %w", err)
+		return "", fmt.Errorf("get who from repo: %w", err)
 	}
 }
 
 func (s *Service) Next(ctx context.Context, chatID int64) (string, error) {
 	err := s.repo.SetNext(ctx, chatID)
-	if err != nil {
-		return "", fmt.Errorf("get next: %w", err)
+
+	switch {
+	case err == nil:
+		break
+	case errors.Is(err, repository.ErrChatIsEmpty):
+		return "", ErrTryToAddUsers
+	case errors.Is(err, repository.ErrChatIsNotInitialize):
+		return "", ErrTryToInitialize
+	default:
+		return "", fmt.Errorf("get next from repo: %w", err)
 	}
 
 	return s.Who(ctx, chatID)
@@ -46,8 +64,16 @@ func (s *Service) Next(ctx context.Context, chatID int64) (string, error) {
 
 func (s *Service) Prev(ctx context.Context, chatID int64) (string, error) {
 	err := s.repo.SetPrev(ctx, chatID)
-	if err != nil {
-		return "", fmt.Errorf("get prev: %w", err)
+
+	switch {
+	case err == nil:
+		break
+	case errors.Is(err, repository.ErrChatIsEmpty):
+		return "", ErrTryToAddUsers
+	case errors.Is(err, repository.ErrChatIsNotInitialize):
+		return "", ErrTryToInitialize
+	default:
+		return "", fmt.Errorf("get prev from repo: %w", err)
 	}
 
 	return s.Who(ctx, chatID)
@@ -55,7 +81,7 @@ func (s *Service) Prev(ctx context.Context, chatID int64) (string, error) {
 
 func (s *Service) SetEstablish(ctx context.Context, chatID int64, users []string) error {
 	if err := s.repo.SetEstablish(ctx, chatID, users); err != nil {
-		return fmt.Errorf("set establish: %w", err)
+		return fmt.Errorf("set establish from repo: %w", err)
 	}
 
 	return nil

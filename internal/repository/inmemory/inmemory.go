@@ -3,16 +3,21 @@ package inmemory
 import (
 	"context"
 
-	"github.com/6ermvH/trash-bot/internal/model"
 	"github.com/6ermvH/trash-bot/internal/repository"
 )
 
+type Chat struct {
+	ID      int64
+	Current int
+	Users   []string
+}
+
 type RepoInMem struct {
-	chats map[int64]*model.Chat
+	chats map[int64]*Chat
 }
 
 func New() *RepoInMem {
-	return &RepoInMem{chats: make(map[int64]*model.Chat)}
+	return &RepoInMem{chats: make(map[int64]*Chat)}
 }
 
 func (r *RepoInMem) GetCurrent(ctx context.Context, chatID int64) (string, error) {
@@ -61,7 +66,7 @@ func (r *RepoInMem) SetPrev(ctx context.Context, chatID int64) error {
 func (r *RepoInMem) SetEstablish(ctx context.Context, chatID int64, users []string) error {
 	chat, ok := r.chats[chatID]
 	if !ok {
-		chat = &model.Chat{
+		chat = &Chat{
 			ID:      chatID,
 			Current: 0,
 			Users:   make([]string, 0, len(users)),
