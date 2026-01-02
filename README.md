@@ -1,4 +1,4 @@
-# trash-bot
+# Trash Bot
 
 [![CI](https://img.shields.io/github/actions/workflow/status/6ermvH/trash-bot/ci.yml?branch=main)](https://github.com/6ermvH/trash-bot/actions)
 [![Release](https://img.shields.io/github/v/release/6ermvH/trash-bot)](https://github.com/6ermvH/trash-bot/releases)
