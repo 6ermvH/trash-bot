@@ -12,25 +12,34 @@ import (
 )
 
 func Start(ctx context.Context, cfg *config.Config) error {
-
 	opts := []bot.Option{}
 
-	b, err := bot.New(cfg.Telegram.BotKey, opts...)
+	botApi, err := bot.New(cfg.Telegram.BotKey, opts...)
 	if err != nil {
-		return fmt.Errorf("init bot: %v", err)
+		return fmt.Errorf("init bot: %w", err)
 	}
 
 	repo := inmemory.New()
 	trashm := trashmanager.New(repo)
 	handlers := telegram.New(trashm)
 
-	b.RegisterHandler(bot.HandlerTypeMessageText, "start", bot.MatchTypeCommand, handlers.Start)
-	b.RegisterHandler(bot.HandlerTypeMessageText, "set", bot.MatchTypeCommand, handlers.SetEstablish)
-	b.RegisterHandler(bot.HandlerTypeMessageText, "next", bot.MatchTypeCommand, handlers.Next)
-	b.RegisterHandler(bot.HandlerTypeMessageText, "prev", bot.MatchTypeCommand, handlers.Prev)
-	b.RegisterHandler(bot.HandlerTypeMessageText, "who", bot.MatchTypeCommand, handlers.Who)
+	botApi.RegisterHandler(
+		bot.HandlerTypeMessageText,
+		"start",
+		bot.MatchTypeCommand,
+		handlers.Start,
+	)
+	botApi.RegisterHandler(
+		bot.HandlerTypeMessageText,
+		"set",
+		bot.MatchTypeCommand,
+		handlers.SetEstablish,
+	)
+	botApi.RegisterHandler(bot.HandlerTypeMessageText, "next", bot.MatchTypeCommand, handlers.Next)
+	botApi.RegisterHandler(bot.HandlerTypeMessageText, "prev", bot.MatchTypeCommand, handlers.Prev)
+	botApi.RegisterHandler(bot.HandlerTypeMessageText, "who", bot.MatchTypeCommand, handlers.Who)
 
-	b.Start(ctx)
+	botApi.Start(ctx)
 
 	return nil
 }

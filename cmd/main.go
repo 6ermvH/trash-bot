@@ -11,7 +11,6 @@ import (
 )
 
 func main() {
-
 	cfg, err := config.NewFromFile("config/base.yaml")
 	if err != nil {
 		panic(err)

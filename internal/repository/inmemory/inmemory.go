@@ -72,7 +72,6 @@ func (r *RepoInMem) SetEstablish(ctx context.Context, chatID int64, users []stri
 	chat.Users = append(chat.Users, users...)
 
 	return nil
-
 }
 
 func (r *RepoInMem) Subscribe(ctx context.Context, chatID int64) error {

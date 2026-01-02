@@ -2,63 +2,119 @@ package telegram
 
 import (
 	"context"
-	"fmt"
+	"log"
 
 	"github.com/go-telegram/bot"
 	"github.com/go-telegram/bot/models"
 	"github.com/go-telegram/ui/keyboard/inline"
 )
 
-func (t *TgBotHandler) getKeyboardOnStart(b *bot.Bot) *inline.Keyboard {
-	kb := inline.New(b).Row().
-		Button("Кто выносит", []byte(""), func(ctx context.Context, b *bot.Bot, mes models.MaybeInaccessibleMessage, data []byte) {
-			username, err := t.service.Who(ctx, mes.Message.Chat.ID)
-			if err != nil {
-				b.SendMessage(ctx, &bot.SendMessageParams{
-					ChatID: mes.Message.Chat.ID,
-					Text:   "Во время выполнения запроса произошла ошибка",
-				})
-				return
-			}
+func (t *TgBotHandler) getKeyboardOnStart(botApi *bot.Bot) *inline.Keyboard {
+	keyboard := inline.New(botApi).Row().
+		Button("Кто выносит", []byte(""), t.handleWho).
+		Row().
+		Button("Следующий", []byte(""), t.handleNext).
+		Row().
+		Button("Предыдущий", []byte(""), t.handlePrev)
 
-			text := fmt.Sprintf("Мусор выносит: %s", username)
-			b.SendMessage(ctx, &bot.SendMessageParams{
-				ChatID: mes.Message.Chat.ID,
-				Text:   text,
-			})
-		}).Row().
-		Button("Следующий", []byte(""), func(ctx context.Context, b *bot.Bot, mes models.MaybeInaccessibleMessage, data []byte) {
-			username, err := t.service.Next(ctx, mes.Message.Chat.ID)
-			if err != nil {
-				b.SendMessage(ctx, &bot.SendMessageParams{
-					ChatID: mes.Message.Chat.ID,
-					Text:   "Во время выполнения запроса произошла ошибка",
-				})
-				return
-			}
+	return keyboard
+}
 
-			text := fmt.Sprintf("Мусор выносит: %s", username)
-			b.SendMessage(ctx, &bot.SendMessageParams{
-				ChatID: mes.Message.Chat.ID,
-				Text:   text,
-			})
-		}).Row().
-		Button("Предыдущий", []byte(""), func(ctx context.Context, b *bot.Bot, mes models.MaybeInaccessibleMessage, data []byte) {
-			username, err := t.service.Prev(ctx, mes.Message.Chat.ID)
-			if err != nil {
-				b.SendMessage(ctx, &bot.SendMessageParams{
-					ChatID: mes.Message.Chat.ID,
-					Text:   "Во время выполнения запроса произошла ошибка",
-				})
-				return
-			}
+func (t *TgBotHandler) handleWho(
+	ctx context.Context,
+	botApi *bot.Bot,
+	mes models.MaybeInaccessibleMessage,
+	data []byte,
+) {
+	username, err := t.service.Who(ctx, mes.Message.Chat.ID)
+	if err != nil {
+		t.sendMessage(
+			ctx,
+			botApi,
+			mes.Message.Chat.ID,
+			"Во время выполнения запроса произошла ошибка",
+			"Handler Who send message error",
+		)
 
-			text := fmt.Sprintf("Мусор выносит: %s", username)
-			b.SendMessage(ctx, &bot.SendMessageParams{
-				ChatID: mes.Message.Chat.ID,
-				Text:   text,
-			})
-		})
+		return
+	}
 
-	return kb
+	t.sendMessage(
+		ctx,
+		botApi,
+		mes.Message.Chat.ID,
+		"Мусор выносит: "+username,
+		"Handler Who send message error",
+	)
+}
+
+func (t *TgBotHandler) handleNext(
+	ctx context.Context,
+	botApi *bot.Bot,
+	mes models.MaybeInaccessibleMessage,
+	data []byte,
+) {
+	username, err := t.service.Next(ctx, mes.Message.Chat.ID)
+	if err != nil {
+		t.sendMessage(
+			ctx,
+			botApi,
+			mes.Message.Chat.ID,
+			"Во время выполнения запроса произошла ошибка",
+			"Handler Next send message error",
+		)
+
+		return
+	}
+
+	t.sendMessage(
+		ctx,
+		botApi,
+		mes.Message.Chat.ID,
+		"Мусор выносит: "+username,
+		"Handler Next send message error",
+	)
+}
+
+func (t *TgBotHandler) handlePrev(
+	ctx context.Context,
+	botApi *bot.Bot,
+	mes models.MaybeInaccessibleMessage,
+	data []byte,
+) {
+	username, err := t.service.Prev(ctx, mes.Message.Chat.ID)
+	if err != nil {
+		t.sendMessage(
+			ctx,
+			botApi,
+			mes.Message.Chat.ID,
+			"Во время выполнения запроса произошла ошибка",
+			"Handler Prev send message error",
+		)
+
+		return
+	}
+
+	t.sendMessage(
+		ctx,
+		botApi,
+		mes.Message.Chat.ID,
+		"Мусор выносит: "+username,
+		"Handler Prev send message error",
+	)
+}
+
+func (t *TgBotHandler) sendMessage(
+	ctx context.Context,
+	botApi *bot.Bot,
+	chatID int64,
+	text string,
+	errPrefix string,
+) {
+	if _, err := botApi.SendMessage(ctx, &bot.SendMessageParams{
+		ChatID: chatID,
+		Text:   text,
+	}); err != nil {
+		log.Printf("%s: %v", errPrefix, err.Error())
+	}
 }

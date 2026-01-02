@@ -1,0 +1,43 @@
+version: "2"
+
+run:
+  tests: true
+  timeout: 1m
+  relative-path-mode: gomod
+  concurrency: 4
+
+linters:
+  default: all
+  disable:
+    - depguard
+    - exhaustruct
+    - govet
+    - noinlineerr
+    - revive # enable later
+    - musttag
+    - gosec
+    - godox
+
+  exclusions:
+    paths:
+
+linters-settings:
+  lll:
+    line-length: 120
+  gosec:
+    excludes:
+      - G304
+
+formatters:
+  enable:
+    - gofmt
+    - gofumpt
+    - goimports
+    - golines
+
+  exclusions:
+    paths:
+
+formatters-settings:
+  golines:
+    max-len: 120

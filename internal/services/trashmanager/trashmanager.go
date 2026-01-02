@@ -3,11 +3,10 @@ package trashmanager
 import (
 	"context"
 	"errors"
+	"fmt"
 )
 
-var (
-	ErrChatIsNotInitialize = errors.New("")
-)
+var ErrChatIsNotInitialize = errors.New("")
 
 type Repository interface {
 	GetCurrent(ctx context.Context, chatID int64) (string, error)
@@ -27,27 +26,39 @@ func New(repo Repository) *Service {
 }
 
 func (s *Service) Who(ctx context.Context, chatID int64) (string, error) {
-	return s.repo.GetCurrent(ctx, chatID)
+	username, err := s.repo.GetCurrent(ctx, chatID)
+	switch err {
+	case nil:
+		return username, nil
+	default:
+		return "", fmt.Errorf("get Who From chat: %w", err)
+	}
 }
 
 func (s *Service) Next(ctx context.Context, chatID int64) (string, error) {
-	if err := s.repo.SetNext(ctx, chatID); err != nil {
-		return "", err
+	err := s.repo.SetNext(ctx, chatID)
+	if err != nil {
+		return "", fmt.Errorf("get next: %w", err)
 	}
 
 	return s.Who(ctx, chatID)
 }
 
 func (s *Service) Prev(ctx context.Context, chatID int64) (string, error) {
-	if err := s.repo.SetPrev(ctx, chatID); err != nil {
-		return "", err
+	err := s.repo.SetPrev(ctx, chatID)
+	if err != nil {
+		return "", fmt.Errorf("get prev: %w", err)
 	}
 
 	return s.Who(ctx, chatID)
 }
 
 func (s *Service) SetEstablish(ctx context.Context, chatID int64, users []string) error {
-	return s.repo.SetEstablish(ctx, chatID, users)
+	if err := s.repo.SetEstablish(ctx, chatID, users); err != nil {
+		return fmt.Errorf("set establish: %w", err)
+	}
+
+	return nil
 }
 
 func (s *Service) Subscribe(ctx context.Context, chatID int64) error {
