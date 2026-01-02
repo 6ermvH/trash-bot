@@ -5,6 +5,7 @@ run:
   timeout: 1m
   relative-path-mode: gomod
   concurrency: 4
+  go: "1.24"
 
 linters:
   default: all
