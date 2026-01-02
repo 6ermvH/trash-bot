@@ -1,0 +1,9 @@
+telegram:
+  botkey: "6317398679:AAE5pVghUpRGGagOsxebvlT3IqTOmcWXaxA"
+
+server:
+  enabled: true
+  addr: "127.0.0.1"
+  port: "8080"
+  adminlogin: "admin"
+  adminpassword: "admin"
