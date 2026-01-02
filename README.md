@@ -1,4 +1,4 @@
-# trash-bot
+# Trash Bot
 
 [![Go Report Card](https://goreportcard.com/badge/github.com/6ermvH/trash-bot)](https://goreportcard.com/report/github.com/6ermvH/trash-bot)
 [![Codecov](https://codecov.io/gh/6ermvH/trash-bot/branch/main/graph/badge.svg)](https://codecov.io/gh/6ermvH/trash-bot)
