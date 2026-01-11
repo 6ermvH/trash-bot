@@ -6,14 +6,17 @@ import (
 
 	"github.com/6ermvH/trash-bot/internal/config"
 	handlers "github.com/6ermvH/trash-bot/internal/handlers/rest/v1"
+	"github.com/6ermvH/trash-bot/internal/services/trashmanager"
 	"github.com/gin-gonic/gin"
 )
 
-func Start(ctx context.Context, cfg *config.Config) error {
+func Start(ctx context.Context, cfg *config.Config, trashm *trashmanager.Service) error {
 	router := gin.Default()
 
 	// TODO router.GET(...) {...}
-	router.GET("/", handlers.Stat)
+
+	handle := handlers.New(trashm)
+	router.GET("/", handle.Stat)
 
 	port := ":" + cfg.Server.Port
 

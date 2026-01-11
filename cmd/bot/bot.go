@@ -6,12 +6,11 @@ import (
 
 	"github.com/6ermvH/trash-bot/internal/config"
 	"github.com/6ermvH/trash-bot/internal/handlers/telegram"
-	"github.com/6ermvH/trash-bot/internal/repository/inmemory"
 	"github.com/6ermvH/trash-bot/internal/services/trashmanager"
 	"github.com/go-telegram/bot"
 )
 
-func Start(ctx context.Context, cfg *config.Config) error {
+func Start(ctx context.Context, cfg *config.Config, trashm *trashmanager.Service) error {
 	opts := []bot.Option{}
 
 	botApi, err := bot.New(cfg.Telegram.BotKey, opts...)
@@ -19,8 +18,6 @@ func Start(ctx context.Context, cfg *config.Config) error {
 		return fmt.Errorf("init bot: %w", err)
 	}
 
-	repo := inmemory.New()
-	trashm := trashmanager.New(repo)
 	handlers := telegram.New(trashm)
 
 	botApi.RegisterHandler(
