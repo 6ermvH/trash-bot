@@ -22,6 +22,18 @@ func New() *RepoInMem {
 	return &RepoInMem{chats: make(map[int64]*Chat)}
 }
 
+func (r *RepoInMem) GetStat(ctx context.Context) []int64 {
+	r.mu.Lock()
+	defer r.mu.Unlock()
+
+	result := make([]int64, 0)
+	for id := range r.chats {
+		result = append(result, id)
+	}
+
+	return result
+}
+
 func (r *RepoInMem) GetCurrent(ctx context.Context, chatID int64) (string, error) {
 	r.mu.Lock()
 	defer r.mu.Unlock()
