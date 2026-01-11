@@ -8,5 +8,5 @@ import (
 
 func Stat(c *gin.Context) {
 	url := c.Request.URL.Path
-	fmt.Printf("request url is: ", url)
+	fmt.Printf("request url is: %q", url)
 }

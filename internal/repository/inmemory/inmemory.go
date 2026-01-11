@@ -2,6 +2,7 @@ package inmemory
 
 import (
 	"context"
+	"sync"
 
 	"github.com/6ermvH/trash-bot/internal/repository"
 )
@@ -14,6 +15,7 @@ type Chat struct {
 
 type RepoInMem struct {
 	chats map[int64]*Chat
+	mu    sync.Mutex
 }
 
 func New() *RepoInMem {
@@ -21,6 +23,9 @@ func New() *RepoInMem {
 }
 
 func (r *RepoInMem) GetCurrent(ctx context.Context, chatID int64) (string, error) {
+	r.mu.Lock()
+	defer r.mu.Unlock()
+
 	chat, ok := r.chats[chatID]
 	if !ok {
 		return "", repository.ErrChatIsNotInitialize
@@ -34,6 +39,9 @@ func (r *RepoInMem) GetCurrent(ctx context.Context, chatID int64) (string, error
 }
 
 func (r *RepoInMem) SetNext(ctx context.Context, chatID int64) error {
+	r.mu.Lock()
+	defer r.mu.Unlock()
+
 	chat, ok := r.chats[chatID]
 	if !ok {
 		return repository.ErrChatIsNotInitialize
@@ -49,6 +57,9 @@ func (r *RepoInMem) SetNext(ctx context.Context, chatID int64) error {
 }
 
 func (r *RepoInMem) SetPrev(ctx context.Context, chatID int64) error {
+	r.mu.Lock()
+	defer r.mu.Unlock()
+
 	chat, ok := r.chats[chatID]
 	if !ok {
 		return repository.ErrChatIsNotInitialize
@@ -64,6 +75,9 @@ func (r *RepoInMem) SetPrev(ctx context.Context, chatID int64) error {
 }
 
 func (r *RepoInMem) SetEstablish(ctx context.Context, chatID int64, users []string) error {
+	r.mu.Lock()
+	defer r.mu.Unlock()
+
 	chat, ok := r.chats[chatID]
 	if !ok {
 		chat = &Chat{
