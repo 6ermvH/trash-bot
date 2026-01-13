@@ -5,7 +5,7 @@ import (
 	"fmt"
 
 	"github.com/6ermvH/trash-bot/internal/config"
-	handlers "github.com/6ermvH/trash-bot/internal/handlers/rest/v1"
+	handlers "github.com/6ermvH/trash-bot/internal/handlers/http/v1"
 	"github.com/6ermvH/trash-bot/internal/services/trashmanager"
 	"github.com/gin-gonic/gin"
 )
