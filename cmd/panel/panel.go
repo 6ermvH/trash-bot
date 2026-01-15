@@ -16,7 +16,7 @@ func Start(ctx context.Context, cfg *config.Config, trashm *trashmanager.Service
 	// TODO router.GET(...) {...}
 
 	handle := handlers.New(trashm)
-	router.GET("/", handle.Stat)
+	router.GET("/", handle.Chats)
 
 	port := ":" + cfg.Server.Port
 

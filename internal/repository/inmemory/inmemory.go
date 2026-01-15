@@ -8,9 +8,9 @@ import (
 )
 
 type Chat struct {
-	ID      int64
-	Current int
-	Users   []string
+	ID      int64    `json:"id"`
+	Current int      `json:"currentUser"`
+	Users   []string `json:"activeUsers"`
 }
 
 type RepoInMem struct {
@@ -22,13 +22,13 @@ func New() *RepoInMem {
 	return &RepoInMem{chats: make(map[int64]*Chat)}
 }
 
-func (r *RepoInMem) GetStat(ctx context.Context) []int64 {
+func (r *RepoInMem) GetChats(ctx context.Context) []Chat {
 	r.mu.Lock()
 	defer r.mu.Unlock()
 
-	result := make([]int64, 0)
-	for id := range r.chats {
-		result = append(result, id)
+	result := make([]Chat, 0)
+	for _, chat := range r.chats {
+		result = append(result, *chat)
 	}
 
 	return result

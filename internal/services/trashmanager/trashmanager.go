@@ -6,6 +6,7 @@ import (
 	"fmt"
 
 	"github.com/6ermvH/trash-bot/internal/repository"
+	"github.com/6ermvH/trash-bot/internal/repository/inmemory"
 )
 
 var (
@@ -14,7 +15,8 @@ var (
 )
 
 type Repository interface {
-	GetStat(ctx context.Context) []int64
+	GetChats(ctx context.Context) []inmemory.Chat
+
 	GetCurrent(ctx context.Context, chatID int64) (string, error)
 	SetNext(ctx context.Context, chatID int64) error
 	SetPrev(ctx context.Context, chatID int64) error
@@ -31,8 +33,8 @@ func New(repo Repository) *Service {
 	return &Service{repo: repo}
 }
 
-func (s *Service) Stat(ctx context.Context) []int64 {
-	return s.repo.GetStat(ctx)
+func (s *Service) Chats(ctx context.Context) []inmemory.Chat {
+	return s.repo.GetChats(ctx)
 }
 
 func (s *Service) Who(ctx context.Context, chatID int64) (string, error) {

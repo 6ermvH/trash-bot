@@ -1,13 +1,16 @@
-package handlers
+package apiv1
 
 import (
 	"context"
+	"net/http"
 
+	"github.com/6ermvH/trash-bot/internal/repository/inmemory"
 	"github.com/gin-gonic/gin"
 )
 
 type Service interface {
-	Stat(ctx context.Context) []int64
+	Chats(ctx context.Context) []inmemory.Chat
+
 	Who(ctx context.Context, chatID int64) (string, error)
 	Next(ctx context.Context, chatID int64) (string, error)
 	Prev(ctx context.Context, chatID int64) (string, error)
@@ -24,8 +27,8 @@ func New(service Service) *HandlerM {
 	return &HandlerM{service: service}
 }
 
-func (h *HandlerM) Stat(c *gin.Context) {
-	ids := h.service.Stat(c.Request.Context())
+func (h *HandlerM) Chats(c *gin.Context) {
+	ids := h.service.Chats(c.Request.Context())
 
-	c.JSON(200, ids)
+	c.JSON(http.StatusOK, ids)
 }
