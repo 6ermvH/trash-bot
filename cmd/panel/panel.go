@@ -18,6 +18,7 @@ var webFS embed.FS
 
 func Start(ctx context.Context, cfg *config.Config, trashm *trashmanager.Service) error {
 	router := gin.Default()
+	router.RedirectTrailingSlash = false
 
 	// API routes
 	api := router.Group("/api")
@@ -44,14 +45,16 @@ func Start(ctx context.Context, cfg *config.Config, trashm *trashmanager.Service
 	if err != nil {
 		return fmt.Errorf("failed to get web fs: %w", err)
 	}
+	fileServer := http.FileServer(http.FS(webContent))
 	router.GET("/", func(c *gin.Context) {
-		c.FileFromFS("index.html", http.FS(webContent))
+		c.Request.URL.Path = "/index.html"
+		fileServer.ServeHTTP(c.Writer, c.Request)
 	})
 	router.GET("/style.css", func(c *gin.Context) {
-		c.FileFromFS("style.css", http.FS(webContent))
+		fileServer.ServeHTTP(c.Writer, c.Request)
 	})
 	router.GET("/app.js", func(c *gin.Context) {
-		c.FileFromFS("app.js", http.FS(webContent))
+		fileServer.ServeHTTP(c.Writer, c.Request)
 	})
 
 	port := ":" + cfg.Server.Port
