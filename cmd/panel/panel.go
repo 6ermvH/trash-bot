@@ -13,10 +13,11 @@ import (
 func Start(ctx context.Context, cfg *config.Config, trashm *trashmanager.Service) error {
 	router := gin.Default()
 
-	// TODO router.GET(...) {...}
-
 	handle := handlers.New(trashm)
+
+	router.GET("/stats", handle.Stats)
 	router.GET("/chats", handle.Chats)
+	router.GET("/chats/:id", handle.ChatByID)
 
 	port := ":" + cfg.Server.Port
 

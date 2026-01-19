@@ -16,6 +16,7 @@ var (
 
 type Repository interface {
 	GetChats(ctx context.Context) []inmemory.Chat
+	GetChat(ctx context.Context, chatID int64) (*inmemory.Chat, error)
 
 	GetCurrent(ctx context.Context, chatID int64) (string, error)
 	SetNext(ctx context.Context, chatID int64) error
@@ -23,6 +24,12 @@ type Repository interface {
 	SetEstablish(ctx context.Context, chatID int64, users []string) error
 	Subscribe(ctx context.Context, chatID int64) error
 	Unsubscribe(ctx context.Context, chatID int64) error
+}
+
+type Stats struct {
+	TotalChats      int     `json:"totalChats"`
+	TotalUsers      int     `json:"totalUsers"`
+	AvgUsersPerChat float64 `json:"avgUsersPerChat"`
 }
 
 type Service struct {
@@ -35,6 +42,36 @@ func New(repo Repository) *Service {
 
 func (s *Service) Chats(ctx context.Context) []inmemory.Chat {
 	return s.repo.GetChats(ctx)
+}
+
+func (s *Service) Chat(ctx context.Context, chatID int64) (*inmemory.Chat, error) {
+	chat, err := s.repo.GetChat(ctx, chatID)
+	if err != nil {
+		return nil, fmt.Errorf("get chat from repo: %w", err)
+	}
+
+	return chat, nil
+}
+
+func (s *Service) Stats(ctx context.Context) Stats {
+	chats := s.repo.GetChats(ctx)
+
+	totalChats := len(chats)
+	totalUsers := 0
+	for _, chat := range chats {
+		totalUsers += len(chat.Users)
+	}
+
+	var avgUsers float64
+	if totalChats > 0 {
+		avgUsers = float64(totalUsers) / float64(totalChats)
+	}
+
+	return Stats{
+		TotalChats:      totalChats,
+		TotalUsers:      totalUsers,
+		AvgUsersPerChat: avgUsers,
+	}
 }
 
 func (s *Service) Who(ctx context.Context, chatID int64) (string, error) {

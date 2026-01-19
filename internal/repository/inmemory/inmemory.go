@@ -34,6 +34,19 @@ func (r *RepoInMem) GetChats(ctx context.Context) []Chat {
 	return result
 }
 
+func (r *RepoInMem) GetChat(ctx context.Context, chatID int64) (*Chat, error) {
+	r.mu.Lock()
+	defer r.mu.Unlock()
+
+	chat, ok := r.chats[chatID]
+	if !ok {
+		return nil, repository.ErrChatIsNotInitialize
+	}
+
+	chatCopy := *chat
+	return &chatCopy, nil
+}
+
 func (r *RepoInMem) GetCurrent(ctx context.Context, chatID int64) (string, error) {
 	r.mu.Lock()
 	defer r.mu.Unlock()
