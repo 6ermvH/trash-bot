@@ -38,6 +38,7 @@ func (r *RepoInMem) GetChat(ctx context.Context, chatID int64) (*repository.Chat
 	}
 
 	chatCopy := *chat
+
 	return &chatCopy, nil
 }
 
