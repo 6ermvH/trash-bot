@@ -25,6 +25,7 @@ type ServerCfg struct {
 	Port          string `yaml: port`
 	AdminLogin    string `yaml: adminlogin`
 	AdminPassword string `yaml: adminpassword`
+	JWTSecret     string `yaml: jwtsecret`
 }
 
 // New create empty Config.

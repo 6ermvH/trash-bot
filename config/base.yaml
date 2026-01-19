@@ -7,3 +7,4 @@ server:
   port: "8080"
   adminlogin: "admin"
   adminpassword: "admin"
+  jwtsecret: "your-secret-key-change-in-production"
