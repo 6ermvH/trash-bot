@@ -64,6 +64,7 @@ func (s *Service) Stats(ctx context.Context) (Stats, error) {
 	}
 
 	totalChats := len(chats)
+
 	totalUsers := 0
 	for _, chat := range chats {
 		totalUsers += len(chat.Users)

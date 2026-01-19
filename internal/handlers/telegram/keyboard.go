@@ -29,6 +29,7 @@ func (t *TgBotHandler) handleWho(
 	username, err := t.service.Who(ctx, mes.Message.Chat.ID)
 	if err != nil {
 		t.sendServiceError(ctx, botApi, mes.Message.Chat.ID, err, "Inline Who")
+
 		return
 	}
 
@@ -50,6 +51,7 @@ func (t *TgBotHandler) handleNext(
 	username, err := t.service.Next(ctx, mes.Message.Chat.ID)
 	if err != nil {
 		t.sendServiceError(ctx, botApi, mes.Message.Chat.ID, err, "Inline Next")
+
 		return
 	}
 
@@ -71,6 +73,7 @@ func (t *TgBotHandler) handlePrev(
 	username, err := t.service.Prev(ctx, mes.Message.Chat.ID)
 	if err != nil {
 		t.sendServiceError(ctx, botApi, mes.Message.Chat.ID, err, "Inline Prev")
+
 		return
 	}
 

@@ -17,14 +17,16 @@ import (
 var webFS embed.FS
 
 func serveEmbeddedFile(router *gin.Engine, route, path, contentType string) {
-	router.GET(route, func(c *gin.Context) {
+	router.GET(route, func(ctx *gin.Context) {
 		data, err := webFS.ReadFile(path)
 		if err != nil {
 			log.Printf("read embedded file %s: %v", path, err)
-			c.JSON(http.StatusInternalServerError, gin.H{"error": "failed to load static file"})
+			ctx.JSON(http.StatusInternalServerError, gin.H{"error": "failed to load static file"})
+
 			return
 		}
-		c.Data(http.StatusOK, contentType, data)
+
+		ctx.Data(http.StatusOK, contentType, data)
 	})
 }
 

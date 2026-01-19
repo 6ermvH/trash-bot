@@ -29,12 +29,21 @@ func main() {
 		if err != nil {
 			log.Fatalf("failed to open sqlite db: %v", err)
 		}
-		defer repo.Close()
+
+		defer func() {
+			if err := repo.Close(); err != nil {
+				log.Printf("close sqlite db: %v", err)
+			}
+		}()
+
 		trashm = trashmanager.New(repo)
+
 		log.Printf("Using SQLite database: %s\n", cfg.Database.Path)
 	default:
 		repo := inmemory.New()
+
 		trashm = trashmanager.New(repo)
+
 		log.Println("Using in-memory database")
 	}
 
@@ -51,6 +60,8 @@ func main() {
 	log.Printf("Bot started\n")
 
 	if err := group.Wait(); err != nil {
-		log.Fatalf("application ended with error: %v\n", err)
+		log.Printf("application ended with error: %v\n", err)
+
+		return
 	}
 }

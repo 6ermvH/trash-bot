@@ -9,6 +9,8 @@ import (
 	"github.com/go-telegram/bot/models"
 )
 
+const minSetParts = 2
+
 type Service interface {
 	Who(ctx context.Context, chatID int64) (string, error)
 	Next(ctx context.Context, chatID int64) (string, error)
@@ -35,14 +37,15 @@ func (t *TgBotHandler) Start(ctx context.Context, botApi *bot.Bot, update *model
 		ReplyMarkup: t.getKeyboardOnStart(botApi),
 	})
 	if err != nil {
-		log.Printf("Start. send message: %v", err.Error())
+		log.Printf("Start. send message: %v", err)
 	}
 }
 
 func (t *TgBotHandler) SetEstablish(ctx context.Context, botApi *bot.Bot, update *models.Update) {
 	chatID := update.Message.Chat.ID
 	parts := strings.Fields(update.Message.Text)
-	if len(parts) < 2 {
+
+	if len(parts) < minSetParts {
 		t.sendMessage(
 			ctx,
 			botApi,
@@ -50,12 +53,15 @@ func (t *TgBotHandler) SetEstablish(ctx context.Context, botApi *bot.Bot, update
 			"Provide at least one username after /set",
 			"SetEstablish send message error",
 		)
+
 		return
 	}
+
 	users := parts[1:]
 
 	if err := t.service.SetEstablish(ctx, chatID, users); err != nil {
 		t.sendServiceError(ctx, botApi, chatID, err, "SetEstablish")
+
 		return
 	}
 
@@ -64,7 +70,7 @@ func (t *TgBotHandler) SetEstablish(ctx context.Context, botApi *bot.Bot, update
 		Text:   "Establish success",
 	})
 	if err != nil {
-		log.Printf("SetEstablish. send message: %v", err.Error())
+		log.Printf("SetEstablish. send message: %v", err)
 	}
 }
 
@@ -74,6 +80,7 @@ func (t *TgBotHandler) Next(ctx context.Context, botApi *bot.Bot, update *models
 	username, err := t.service.Next(ctx, chatID)
 	if err != nil {
 		t.sendServiceError(ctx, botApi, chatID, err, "Next")
+
 		return
 	}
 
@@ -81,7 +88,7 @@ func (t *TgBotHandler) Next(ctx context.Context, botApi *bot.Bot, update *models
 		ChatID: update.Message.Chat.ID,
 		Text:   username,
 	}); err != nil {
-		log.Printf("Next. send message: %v", err.Error())
+		log.Printf("Next. send message: %v", err)
 	}
 }
 
@@ -91,6 +98,7 @@ func (t *TgBotHandler) Prev(ctx context.Context, botApi *bot.Bot, update *models
 	username, err := t.service.Prev(ctx, chatID)
 	if err != nil {
 		t.sendServiceError(ctx, botApi, chatID, err, "Prev")
+
 		return
 	}
 
@@ -98,7 +106,7 @@ func (t *TgBotHandler) Prev(ctx context.Context, botApi *bot.Bot, update *models
 		ChatID: update.Message.Chat.ID,
 		Text:   username,
 	}); err != nil {
-		log.Printf("Prev. send message: %v", err.Error())
+		log.Printf("Prev. send message: %v", err)
 	}
 }
 
@@ -108,6 +116,7 @@ func (t *TgBotHandler) Who(ctx context.Context, botApi *bot.Bot, update *models.
 	username, err := t.service.Who(ctx, chatID)
 	if err != nil {
 		t.sendServiceError(ctx, botApi, chatID, err, "Who")
+
 		return
 	}
 
@@ -115,6 +124,6 @@ func (t *TgBotHandler) Who(ctx context.Context, botApi *bot.Bot, update *models.
 		ChatID: update.Message.Chat.ID,
 		Text:   username,
 	}); err != nil {
-		log.Printf("Who. send message: %v", err.Error())
+		log.Printf("Who. send message: %v", err)
 	}
 }

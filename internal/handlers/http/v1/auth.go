@@ -8,6 +8,8 @@ import (
 	"github.com/golang-jwt/jwt/v5"
 )
 
+const tokenTTL = 24 * time.Hour
+
 type AuthHandler struct {
 	adminLogin    string
 	adminPassword string
@@ -31,28 +33,31 @@ type LoginResponse struct {
 	Token string `json:"token"`
 }
 
-func (h *AuthHandler) Login(c *gin.Context) {
+func (h *AuthHandler) Login(ctx *gin.Context) {
 	var req LoginRequest
-	if err := c.ShouldBindJSON(&req); err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"error": "invalid request body"})
+	if err := ctx.ShouldBindJSON(&req); err != nil {
+		ctx.JSON(http.StatusBadRequest, gin.H{"error": "invalid request body"})
+
 		return
 	}
 
 	if req.Login != h.adminLogin || req.Password != h.adminPassword {
-		c.JSON(http.StatusUnauthorized, gin.H{"error": "invalid credentials"})
+		ctx.JSON(http.StatusUnauthorized, gin.H{"error": "invalid credentials"})
+
 		return
 	}
 
 	token := jwt.NewWithClaims(jwt.SigningMethodHS256, jwt.MapClaims{
 		"login": req.Login,
-		"exp":   time.Now().Add(24 * time.Hour).Unix(),
+		"exp":   time.Now().Add(tokenTTL).Unix(),
 	})
 
 	tokenString, err := token.SignedString([]byte(h.jwtSecret))
 	if err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": "failed to generate token"})
+		ctx.JSON(http.StatusInternalServerError, gin.H{"error": "failed to generate token"})
+
 		return
 	}
 
-	c.JSON(http.StatusOK, LoginResponse{Token: tokenString})
+	ctx.JSON(http.StatusOK, LoginResponse{Token: tokenString})
 }

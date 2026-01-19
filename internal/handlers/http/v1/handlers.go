@@ -32,43 +32,50 @@ func New(service Service) *HandlerM {
 	return &HandlerM{service: service}
 }
 
-func (h *HandlerM) Chats(c *gin.Context) {
-	chats, err := h.service.Chats(c.Request.Context())
+func (h *HandlerM) Chats(ctx *gin.Context) {
+	chats, err := h.service.Chats(ctx.Request.Context())
 	if err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": "failed to load chats"})
+		ctx.JSON(http.StatusInternalServerError, gin.H{"error": "failed to load chats"})
+
 		return
 	}
 
-	c.JSON(http.StatusOK, chats)
+	ctx.JSON(http.StatusOK, chats)
 }
 
-func (h *HandlerM) ChatByID(c *gin.Context) {
-	idStr := c.Param("id")
+func (h *HandlerM) ChatByID(ctx *gin.Context) {
+	idStr := ctx.Param("id")
+
 	chatID, err := strconv.ParseInt(idStr, 10, 64)
 	if err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"error": "invalid chat id"})
+		ctx.JSON(http.StatusBadRequest, gin.H{"error": "invalid chat id"})
+
 		return
 	}
 
-	chat, err := h.service.Chat(c.Request.Context(), chatID)
+	chat, err := h.service.Chat(ctx.Request.Context(), chatID)
 	if err != nil {
 		if errors.Is(err, repository.ErrChatIsNotInitialize) {
-			c.JSON(http.StatusNotFound, gin.H{"error": "chat not found"})
+			ctx.JSON(http.StatusNotFound, gin.H{"error": "chat not found"})
+
 			return
 		}
-		c.JSON(http.StatusInternalServerError, gin.H{"error": "failed to load chat"})
+
+		ctx.JSON(http.StatusInternalServerError, gin.H{"error": "failed to load chat"})
+
 		return
 	}
 
-	c.JSON(http.StatusOK, chat)
+	ctx.JSON(http.StatusOK, chat)
 }
 
-func (h *HandlerM) Stats(c *gin.Context) {
-	stats, err := h.service.Stats(c.Request.Context())
+func (h *HandlerM) Stats(ctx *gin.Context) {
+	stats, err := h.service.Stats(ctx.Request.Context())
 	if err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": "failed to load stats"})
+		ctx.JSON(http.StatusInternalServerError, gin.H{"error": "failed to load stats"})
+
 		return
 	}
 
-	c.JSON(http.StatusOK, stats)
+	ctx.JSON(http.StatusOK, stats)
 }
