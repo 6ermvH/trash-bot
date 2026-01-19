@@ -16,7 +16,7 @@ import (
 func main() {
 	cfg, err := config.NewFromFile("config/base.yaml")
 	if err != nil {
-		panic(err)
+		log.Fatalf("load config: %v", err)
 	}
 
 	group, ctx := errgroup.WithContext(context.Background())

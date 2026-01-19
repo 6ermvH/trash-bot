@@ -41,13 +41,13 @@ func New() *Config {
 }
 
 func NewFromFile(path string) (*Config, error) {
-	file, err := os.Open(path)
+	data, err := os.ReadFile(path)
 	if err != nil {
-		return nil, fmt.Errorf("open file %q: %w", path, err)
+		return nil, fmt.Errorf("read file %q: %w", path, err)
 	}
 
 	cfg := Config{}
-	if err := yaml.NewDecoder(file).Decode(&cfg); err != nil {
+	if err := yaml.Unmarshal(data, &cfg); err != nil {
 		return nil, fmt.Errorf("decode data from file %q: %w", path, err)
 	}
 

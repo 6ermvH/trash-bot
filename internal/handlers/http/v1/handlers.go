@@ -2,6 +2,7 @@ package apiv1
 
 import (
 	"context"
+	"errors"
 	"net/http"
 	"strconv"
 
@@ -11,9 +12,9 @@ import (
 )
 
 type Service interface {
-	Chats(ctx context.Context) []repository.Chat
+	Chats(ctx context.Context) ([]repository.Chat, error)
 	Chat(ctx context.Context, chatID int64) (*repository.Chat, error)
-	Stats(ctx context.Context) trashmanager.Stats
+	Stats(ctx context.Context) (trashmanager.Stats, error)
 
 	Who(ctx context.Context, chatID int64) (string, error)
 	Next(ctx context.Context, chatID int64) (string, error)
@@ -32,9 +33,13 @@ func New(service Service) *HandlerM {
 }
 
 func (h *HandlerM) Chats(c *gin.Context) {
-	ids := h.service.Chats(c.Request.Context())
+	chats, err := h.service.Chats(c.Request.Context())
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "failed to load chats"})
+		return
+	}
 
-	c.JSON(http.StatusOK, ids)
+	c.JSON(http.StatusOK, chats)
 }
 
 func (h *HandlerM) ChatByID(c *gin.Context) {
@@ -47,7 +52,11 @@ func (h *HandlerM) ChatByID(c *gin.Context) {
 
 	chat, err := h.service.Chat(c.Request.Context(), chatID)
 	if err != nil {
-		c.JSON(http.StatusNotFound, gin.H{"error": "chat not found"})
+		if errors.Is(err, repository.ErrChatIsNotInitialize) {
+			c.JSON(http.StatusNotFound, gin.H{"error": "chat not found"})
+			return
+		}
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "failed to load chat"})
 		return
 	}
 
@@ -55,7 +64,11 @@ func (h *HandlerM) ChatByID(c *gin.Context) {
 }
 
 func (h *HandlerM) Stats(c *gin.Context) {
-	stats := h.service.Stats(c.Request.Context())
+	stats, err := h.service.Stats(c.Request.Context())
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "failed to load stats"})
+		return
+	}
 
 	c.JSON(http.StatusOK, stats)
 }

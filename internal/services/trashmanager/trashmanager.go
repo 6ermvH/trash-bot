@@ -14,7 +14,7 @@ var (
 )
 
 type Repository interface {
-	GetChats(ctx context.Context) []repository.Chat
+	GetChats(ctx context.Context) ([]repository.Chat, error)
 	GetChat(ctx context.Context, chatID int64) (*repository.Chat, error)
 
 	GetCurrent(ctx context.Context, chatID int64) (string, error)
@@ -39,8 +39,13 @@ func New(repo Repository) *Service {
 	return &Service{repo: repo}
 }
 
-func (s *Service) Chats(ctx context.Context) []repository.Chat {
-	return s.repo.GetChats(ctx)
+func (s *Service) Chats(ctx context.Context) ([]repository.Chat, error) {
+	chats, err := s.repo.GetChats(ctx)
+	if err != nil {
+		return nil, fmt.Errorf("get chats from repo: %w", err)
+	}
+
+	return chats, nil
 }
 
 func (s *Service) Chat(ctx context.Context, chatID int64) (*repository.Chat, error) {
@@ -52,8 +57,11 @@ func (s *Service) Chat(ctx context.Context, chatID int64) (*repository.Chat, err
 	return chat, nil
 }
 
-func (s *Service) Stats(ctx context.Context) Stats {
-	chats := s.repo.GetChats(ctx)
+func (s *Service) Stats(ctx context.Context) (Stats, error) {
+	chats, err := s.repo.GetChats(ctx)
+	if err != nil {
+		return Stats{}, fmt.Errorf("get chats for stats: %w", err)
+	}
 
 	totalChats := len(chats)
 	totalUsers := 0
@@ -70,7 +78,7 @@ func (s *Service) Stats(ctx context.Context) Stats {
 		TotalChats:      totalChats,
 		TotalUsers:      totalUsers,
 		AvgUsersPerChat: avgUsers,
-	}
+	}, nil
 }
 
 func (s *Service) Who(ctx context.Context, chatID int64) (string, error) {

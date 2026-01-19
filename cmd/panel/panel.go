@@ -4,6 +4,7 @@ import (
 	"context"
 	"embed"
 	"fmt"
+	"log"
 	"net/http"
 
 	"github.com/6ermvH/trash-bot/internal/config"
@@ -14,6 +15,18 @@ import (
 
 //go:embed all:web
 var webFS embed.FS
+
+func serveEmbeddedFile(router *gin.Engine, route, path, contentType string) {
+	router.GET(route, func(c *gin.Context) {
+		data, err := webFS.ReadFile(path)
+		if err != nil {
+			log.Printf("read embedded file %s: %v", path, err)
+			c.JSON(http.StatusInternalServerError, gin.H{"error": "failed to load static file"})
+			return
+		}
+		c.Data(http.StatusOK, contentType, data)
+	})
+}
 
 func Start(ctx context.Context, cfg *config.Config, trashm *trashmanager.Service) error {
 	router := gin.Default()
@@ -40,18 +53,9 @@ func Start(ctx context.Context, cfg *config.Config, trashm *trashmanager.Service
 	}
 
 	// Static files
-	router.GET("/", func(c *gin.Context) {
-		data, _ := webFS.ReadFile("web/index.html")
-		c.Data(http.StatusOK, "text/html; charset=utf-8", data)
-	})
-	router.GET("/style.css", func(c *gin.Context) {
-		data, _ := webFS.ReadFile("web/style.css")
-		c.Data(http.StatusOK, "text/css; charset=utf-8", data)
-	})
-	router.GET("/app.js", func(c *gin.Context) {
-		data, _ := webFS.ReadFile("web/app.js")
-		c.Data(http.StatusOK, "application/javascript; charset=utf-8", data)
-	})
+	serveEmbeddedFile(router, "/", "web/index.html", "text/html; charset=utf-8")
+	serveEmbeddedFile(router, "/style.css", "web/style.css", "text/css; charset=utf-8")
+	serveEmbeddedFile(router, "/app.js", "web/app.js", "application/javascript; charset=utf-8")
 
 	port := ":" + cfg.Server.Port
 

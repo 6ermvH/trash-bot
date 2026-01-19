@@ -48,28 +48,29 @@ func (r *RepoSQLite) Close() error {
 	return r.db.Close()
 }
 
-func (r *RepoSQLite) GetChats(ctx context.Context) []repository.Chat {
+func (r *RepoSQLite) GetChats(ctx context.Context) ([]repository.Chat, error) {
 	rows, err := r.db.QueryContext(ctx, "SELECT id, current, users FROM chats")
 	if err != nil {
-		return []repository.Chat{}
+		return nil, fmt.Errorf("query chats: %w", err)
 	}
 	defer rows.Close()
 
-	var chats []repository.Chat
+	chats := make([]repository.Chat, 0)
 	for rows.Next() {
 		var chat repository.Chat
 		var usersJSON string
 		if err := rows.Scan(&chat.ID, &chat.Current, &usersJSON); err != nil {
-			continue
+			return nil, fmt.Errorf("scan chat: %w", err)
 		}
-		json.Unmarshal([]byte(usersJSON), &chat.Users)
+		if err := json.Unmarshal([]byte(usersJSON), &chat.Users); err != nil {
+			return nil, fmt.Errorf("decode chat users: %w", err)
+		}
 		chats = append(chats, chat)
 	}
-
-	if chats == nil {
-		return []repository.Chat{}
+	if err := rows.Err(); err != nil {
+		return nil, fmt.Errorf("iterate chats: %w", err)
 	}
-	return chats
+	return chats, nil
 }
 
 func (r *RepoSQLite) GetChat(ctx context.Context, chatID int64) (*repository.Chat, error) {
@@ -87,7 +88,9 @@ func (r *RepoSQLite) GetChat(ctx context.Context, chatID int64) (*repository.Cha
 		return nil, fmt.Errorf("query chat: %w", err)
 	}
 
-	json.Unmarshal([]byte(usersJSON), &chat.Users)
+	if err := json.Unmarshal([]byte(usersJSON), &chat.Users); err != nil {
+		return nil, fmt.Errorf("decode chat users: %w", err)
+	}
 	return &chat, nil
 }
 
@@ -118,7 +121,10 @@ func (r *RepoSQLite) SetNext(ctx context.Context, chatID int64) error {
 	_, err = r.db.ExecContext(ctx,
 		"UPDATE chats SET current = ? WHERE id = ?", newCurrent, chatID,
 	)
-	return err
+	if err != nil {
+		return fmt.Errorf("update current: %w", err)
+	}
+	return nil
 }
 
 func (r *RepoSQLite) SetPrev(ctx context.Context, chatID int64) error {
@@ -135,7 +141,10 @@ func (r *RepoSQLite) SetPrev(ctx context.Context, chatID int64) error {
 	_, err = r.db.ExecContext(ctx,
 		"UPDATE chats SET current = ? WHERE id = ?", newCurrent, chatID,
 	)
-	return err
+	if err != nil {
+		return fmt.Errorf("update current: %w", err)
+	}
+	return nil
 }
 
 func (r *RepoSQLite) SetEstablish(ctx context.Context, chatID int64, users []string) error {
@@ -149,7 +158,10 @@ func (r *RepoSQLite) SetEstablish(ctx context.Context, chatID int64, users []str
 		ON CONFLICT(id) DO UPDATE SET current = 0, users = ?
 	`, chatID, string(usersJSON), string(usersJSON))
 
-	return err
+	if err != nil {
+		return fmt.Errorf("upsert chat: %w", err)
+	}
+	return nil
 }
 
 func (r *RepoSQLite) Subscribe(ctx context.Context, chatID int64) error {

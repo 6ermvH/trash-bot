@@ -16,7 +16,7 @@ func New() *RepoInMem {
 	return &RepoInMem{chats: make(map[int64]*repository.Chat)}
 }
 
-func (r *RepoInMem) GetChats(ctx context.Context) []repository.Chat {
+func (r *RepoInMem) GetChats(ctx context.Context) ([]repository.Chat, error) {
 	r.mu.Lock()
 	defer r.mu.Unlock()
 
@@ -25,7 +25,7 @@ func (r *RepoInMem) GetChats(ctx context.Context) []repository.Chat {
 		result = append(result, *chat)
 	}
 
-	return result
+	return result, nil
 }
 
 func (r *RepoInMem) GetChat(ctx context.Context, chatID int64) (*repository.Chat, error) {
