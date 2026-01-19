@@ -108,12 +108,12 @@ func (r *RepoInMem) SetEstablish(ctx context.Context, chatID int64, users []stri
 		chat = &Chat{
 			ID:      chatID,
 			Current: 0,
-			Users:   make([]string, 0, len(users)),
 		}
 		r.chats[chatID] = chat
 	}
 
-	chat.Users = append(chat.Users, users...)
+	chat.Users = users
+	chat.Current = 0
 
 	return nil
 }

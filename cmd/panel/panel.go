@@ -4,7 +4,6 @@ import (
 	"context"
 	"embed"
 	"fmt"
-	"io/fs"
 	"net/http"
 
 	"github.com/6ermvH/trash-bot/internal/config"
@@ -41,20 +40,17 @@ func Start(ctx context.Context, cfg *config.Config, trashm *trashmanager.Service
 	}
 
 	// Static files
-	webContent, err := fs.Sub(webFS, "web")
-	if err != nil {
-		return fmt.Errorf("failed to get web fs: %w", err)
-	}
-	fileServer := http.FileServer(http.FS(webContent))
 	router.GET("/", func(c *gin.Context) {
-		c.Request.URL.Path = "/index.html"
-		fileServer.ServeHTTP(c.Writer, c.Request)
+		data, _ := webFS.ReadFile("web/index.html")
+		c.Data(http.StatusOK, "text/html; charset=utf-8", data)
 	})
 	router.GET("/style.css", func(c *gin.Context) {
-		fileServer.ServeHTTP(c.Writer, c.Request)
+		data, _ := webFS.ReadFile("web/style.css")
+		c.Data(http.StatusOK, "text/css; charset=utf-8", data)
 	})
 	router.GET("/app.js", func(c *gin.Context) {
-		fileServer.ServeHTTP(c.Writer, c.Request)
+		data, _ := webFS.ReadFile("web/app.js")
+		c.Data(http.StatusOK, "application/javascript; charset=utf-8", data)
 	})
 
 	port := ":" + cfg.Server.Port
