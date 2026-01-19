@@ -3,6 +3,7 @@ package inmemory
 import (
 	"testing"
 
+	"github.com/6ermvH/trash-bot/internal/repository"
 	"github.com/stretchr/testify/require"
 )
 
@@ -12,7 +13,7 @@ func TestGetCurrent(t *testing.T) {
 	t.Run("One user", func(t *testing.T) {
 		t.Parallel()
 
-		chats := []Chat{
+		chats := []repository.Chat{
 			{
 				ID:      1,
 				Users:   []string{"German"},
@@ -32,7 +33,7 @@ func TestGetCurrent(t *testing.T) {
 	t.Run("More Users", func(t *testing.T) {
 		t.Parallel()
 
-		chats := []Chat{
+		chats := []repository.Chat{
 			{
 				ID:      1,
 				Users:   []string{"German", "Anthon", "Vitaly"},
@@ -60,7 +61,7 @@ func TestSimpleWorkflow(t *testing.T) {
 	t.Run("Next", func(t *testing.T) {
 		t.Parallel()
 
-		chats := []Chat{
+		chats := []repository.Chat{
 			{
 				ID:      1,
 				Users:   []string{"German", "Anthon", "Vitaly"},
@@ -84,7 +85,7 @@ func TestSimpleWorkflow(t *testing.T) {
 	t.Run("Prev", func(t *testing.T) {
 		t.Parallel()
 
-		chats := []Chat{
+		chats := []repository.Chat{
 			{
 				ID:      1,
 				Users:   []string{"German", "Anthon", "Vitaly"},
@@ -113,7 +114,7 @@ func TestSetEstablish(t *testing.T) {
 	t.Run("Simple", func(t *testing.T) {
 		t.Parallel()
 
-		chats := []Chat{
+		chats := []repository.Chat{
 			{
 				ID:      1,
 				Users:   []string{},
@@ -131,7 +132,7 @@ func TestSetEstablish(t *testing.T) {
 	})
 }
 
-func newTestRepo(t *testing.T, chats []Chat) *RepoInMem {
+func newTestRepo(t *testing.T, chats []repository.Chat) *RepoInMem {
 	t.Helper()
 
 	repo := New()

@@ -11,6 +11,13 @@ import (
 type Config struct {
 	Telegram TelegramCfg `yaml: telegram`
 	Server   ServerCfg   `yaml: server`
+	Database DatabaseCfg `yaml: database`
+}
+
+// DatabaseCfg is type database configuration.
+type DatabaseCfg struct {
+	Type string `yaml: type` // "memory" or "sqlite"
+	Path string `yaml: path` // path to sqlite file
 }
 
 // TelegramCfg is type telegram configuration.

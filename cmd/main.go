@@ -8,6 +8,7 @@ import (
 	"github.com/6ermvH/trash-bot/cmd/panel"
 	"github.com/6ermvH/trash-bot/internal/config"
 	"github.com/6ermvH/trash-bot/internal/repository/inmemory"
+	"github.com/6ermvH/trash-bot/internal/repository/sqlite"
 	"github.com/6ermvH/trash-bot/internal/services/trashmanager"
 	"golang.org/x/sync/errgroup"
 )
@@ -20,8 +21,22 @@ func main() {
 
 	group, ctx := errgroup.WithContext(context.Background())
 
-	repo := inmemory.New()
-	trashm := trashmanager.New(repo)
+	var trashm *trashmanager.Service
+
+	switch cfg.Database.Type {
+	case "sqlite":
+		repo, err := sqlite.New(cfg.Database.Path)
+		if err != nil {
+			log.Fatalf("failed to open sqlite db: %v", err)
+		}
+		defer repo.Close()
+		trashm = trashmanager.New(repo)
+		log.Printf("Using SQLite database: %s\n", cfg.Database.Path)
+	default:
+		repo := inmemory.New()
+		trashm = trashmanager.New(repo)
+		log.Println("Using in-memory database")
+	}
 
 	if cfg.Server.Enabled {
 		group.Go(func() error {

@@ -7,26 +7,20 @@ import (
 	"github.com/6ermvH/trash-bot/internal/repository"
 )
 
-type Chat struct {
-	ID      int64    `json:"id"`
-	Current int      `json:"currentUser"`
-	Users   []string `json:"activeUsers"`
-}
-
 type RepoInMem struct {
-	chats map[int64]*Chat
+	chats map[int64]*repository.Chat
 	mu    sync.Mutex
 }
 
 func New() *RepoInMem {
-	return &RepoInMem{chats: make(map[int64]*Chat)}
+	return &RepoInMem{chats: make(map[int64]*repository.Chat)}
 }
 
-func (r *RepoInMem) GetChats(ctx context.Context) []Chat {
+func (r *RepoInMem) GetChats(ctx context.Context) []repository.Chat {
 	r.mu.Lock()
 	defer r.mu.Unlock()
 
-	result := make([]Chat, 0)
+	result := make([]repository.Chat, 0)
 	for _, chat := range r.chats {
 		result = append(result, *chat)
 	}
@@ -34,7 +28,7 @@ func (r *RepoInMem) GetChats(ctx context.Context) []Chat {
 	return result
 }
 
-func (r *RepoInMem) GetChat(ctx context.Context, chatID int64) (*Chat, error) {
+func (r *RepoInMem) GetChat(ctx context.Context, chatID int64) (*repository.Chat, error) {
 	r.mu.Lock()
 	defer r.mu.Unlock()
 
@@ -105,7 +99,7 @@ func (r *RepoInMem) SetEstablish(ctx context.Context, chatID int64, users []stri
 
 	chat, ok := r.chats[chatID]
 	if !ok {
-		chat = &Chat{
+		chat = &repository.Chat{
 			ID:      chatID,
 			Current: 0,
 		}

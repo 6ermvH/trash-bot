@@ -5,14 +5,14 @@ import (
 	"net/http"
 	"strconv"
 
-	"github.com/6ermvH/trash-bot/internal/repository/inmemory"
+	"github.com/6ermvH/trash-bot/internal/repository"
 	"github.com/6ermvH/trash-bot/internal/services/trashmanager"
 	"github.com/gin-gonic/gin"
 )
 
 type Service interface {
-	Chats(ctx context.Context) []inmemory.Chat
-	Chat(ctx context.Context, chatID int64) (*inmemory.Chat, error)
+	Chats(ctx context.Context) []repository.Chat
+	Chat(ctx context.Context, chatID int64) (*repository.Chat, error)
 	Stats(ctx context.Context) trashmanager.Stats
 
 	Who(ctx context.Context, chatID int64) (string, error)

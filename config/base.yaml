@@ -8,3 +8,7 @@ server:
   adminlogin: "admin"
   adminpassword: "admin"
   jwtsecret: "your-secret-key-change-in-production"
+
+database:
+  type: "sqlite"
+  path: "data/trash.db"
