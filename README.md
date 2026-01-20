@@ -1,6 +1,6 @@
 # Trash Bot
 
-[![CI](https://img.shields.io/github/actions/workflow/status/6ermvH/trash-bot/ci.yml?branch=main)](https://github.com/6ermvH/trash-bot/actions)
+[![CI](https://img.shields.io/github/actions/workflow/status/6ermvH/trash-bot/go.yml?branch=main)](https://github.com/6ermvH/trash-bot/actions)
 [![Tag](https://img.shields.io/github/v/tag/6ermvH/trash-bot)](https://github.com/6ermvH/trash-bot/tags)
 [![Go Version](https://img.shields.io/github/go-mod/go-version/6ermvH/trash-bot)](https://github.com/6ermvH/trash-bot/blob/main/go.mod)
 [![License](https://img.shields.io/github/license/6ermvH/trash-bot)](https://github.com/6ermvH/trash-bot/blob/main/LICENSE)
@@ -9,9 +9,10 @@
 Telegram bot for managing a trash duty rotation, with an optional admin panel.
 
 ## Features
-- Telegram commands: `/start`, `/set`, `/next`, `/prev`, `/who`
-- In-memory storage for chat state
-- Optional HTTP panel (Gin) for future CRM/admin features
+- Telegram commands: `/start`, `/set`, `/next`, `/prev`, `/who`, `/subscribe`, `/unsubscribe`
+- Daily notifications at a user-selected time
+- SQLite or in-memory storage for chat state
+- Optional HTTP admin panel (Gin) with JWT authentication
 
 ## Requirements
 - Go (see `go.mod` for the exact version)
@@ -32,6 +33,11 @@ server:
   port: "8080"
   adminlogin: "admin"
   adminpassword: "admin"
+  jwtsecret: "your-secret-key"
+
+database:
+  type: "sqlite"  # or leave empty for in-memory
+  path: "data/trash.db"
 ```
 
 ## Run
