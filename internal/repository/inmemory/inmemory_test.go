@@ -283,6 +283,7 @@ func TestGetSubscribedChats(t *testing.T) {
 		ids := make(map[int64]bool)
 		for _, chat := range subscribed {
 			ids[chat.ID] = true
+
 			require.NotNil(t, chat.NotifyTime)
 		}
 
@@ -332,6 +333,7 @@ func newTestRepo(t *testing.T, chats []repository.Chat) *RepoInMem {
 	t.Helper()
 
 	repo := New()
+
 	for _, chat := range chats {
 		chatCopy := chat
 		repo.chats[chat.ID] = &chatCopy

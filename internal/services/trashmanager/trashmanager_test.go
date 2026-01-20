@@ -9,6 +9,8 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
+var errDatabaseConnection = errors.New("database connection failed")
+
 type mockRepo struct {
 	chats map[int64]*repository.Chat
 }
@@ -319,9 +321,10 @@ func TestService_SubscribeUnsubscribeWorkflow(t *testing.T) {
 	})
 }
 
-// Тест на проверку ошибки репозитория
+// Тест на проверку ошибки репозитория.
 type errorRepo struct {
 	mockRepo
+
 	subscribeErr error
 }
 
@@ -339,10 +342,9 @@ func TestService_Subscribe_RepoError(t *testing.T) {
 	t.Run("Repository error is wrapped", func(t *testing.T) {
 		t.Parallel()
 
-		expectedErr := errors.New("database connection failed")
 		repo := &errorRepo{
 			mockRepo:     mockRepo{chats: make(map[int64]*repository.Chat)},
-			subscribeErr: expectedErr,
+			subscribeErr: errDatabaseConnection,
 		}
 		repo.chats[1] = &repository.Chat{
 			ID:      1,
@@ -355,6 +357,6 @@ func TestService_Subscribe_RepoError(t *testing.T) {
 
 		err := service.Subscribe(ctx, 1, "09:00")
 		require.Error(t, err)
-		require.ErrorIs(t, err, expectedErr)
+		require.ErrorIs(t, err, errDatabaseConnection)
 	})
 }

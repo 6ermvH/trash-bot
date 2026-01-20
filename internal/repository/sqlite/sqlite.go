@@ -42,47 +42,8 @@ func (r *RepoSQLite) Close() error {
 	return nil
 }
 
-func (r *RepoSQLite) GetChats(ctx context.Context) (_ []repository.Chat, err error) {
-	rows, err := r.db.QueryContext(ctx, "SELECT id, current, users, notify_time FROM chats")
-	if err != nil {
-		return nil, fmt.Errorf("query chats: %w", err)
-	}
-
-	defer func() {
-		if closeErr := rows.Close(); closeErr != nil && err == nil {
-			err = fmt.Errorf("close rows: %w", closeErr)
-		}
-	}()
-
-	chats := make([]repository.Chat, 0)
-
-	for rows.Next() {
-		var (
-			chat       repository.Chat
-			usersJSON  string
-			notifyTime sql.NullString
-		)
-
-		if err := rows.Scan(&chat.ID, &chat.Current, &usersJSON, &notifyTime); err != nil {
-			return nil, fmt.Errorf("scan chat: %w", err)
-		}
-
-		if err := json.Unmarshal([]byte(usersJSON), &chat.Users); err != nil {
-			return nil, fmt.Errorf("decode chat users: %w", err)
-		}
-
-		if notifyTime.Valid {
-			chat.NotifyTime = &notifyTime.String
-		}
-
-		chats = append(chats, chat)
-	}
-
-	if err := rows.Err(); err != nil {
-		return nil, fmt.Errorf("iterate chats: %w", err)
-	}
-
-	return chats, nil
+func (r *RepoSQLite) GetChats(ctx context.Context) ([]repository.Chat, error) {
+	return r.queryChats(ctx, "SELECT id, current, users, notify_time FROM chats")
 }
 
 func (r *RepoSQLite) GetChat(ctx context.Context, chatID int64) (*repository.Chat, error) {
@@ -223,13 +184,20 @@ func (r *RepoSQLite) Unsubscribe(ctx context.Context, chatID int64) error {
 	return nil
 }
 
-func (r *RepoSQLite) GetSubscribedChats(ctx context.Context) (_ []repository.Chat, err error) {
-	rows, err := r.db.QueryContext(
+func (r *RepoSQLite) GetSubscribedChats(ctx context.Context) ([]repository.Chat, error) {
+	return r.queryChats(
 		ctx,
 		"SELECT id, current, users, notify_time FROM chats WHERE notify_time IS NOT NULL",
 	)
+}
+
+func (r *RepoSQLite) queryChats(
+	ctx context.Context,
+	query string,
+) (_ []repository.Chat, err error) {
+	rows, err := r.db.QueryContext(ctx, query)
 	if err != nil {
-		return nil, fmt.Errorf("query subscribed chats: %w", err)
+		return nil, fmt.Errorf("query chats: %w", err)
 	}
 
 	defer func() {
@@ -263,7 +231,7 @@ func (r *RepoSQLite) GetSubscribedChats(ctx context.Context) (_ []repository.Cha
 	}
 
 	if err := rows.Err(); err != nil {
-		return nil, fmt.Errorf("iterate subscribed chats: %w", err)
+		return nil, fmt.Errorf("iterate chats: %w", err)
 	}
 
 	return chats, nil

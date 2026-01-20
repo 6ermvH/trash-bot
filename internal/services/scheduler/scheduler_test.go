@@ -78,11 +78,13 @@ func TestScheduler_CheckAndNotify(t *testing.T) {
 
 		// Проверяем фильтрацию по времени
 		matchingChats := 0
+
 		for _, chat := range chats {
 			if chat.NotifyTime != nil && *chat.NotifyTime == currentTime {
 				matchingChats++
 			}
 		}
+
 		require.Equal(t, 1, matchingChats)
 	})
 
@@ -117,10 +119,10 @@ func TestScheduler_GetChatsToNotify(t *testing.T) {
 	t.Parallel()
 
 	testCases := []struct {
-		name         string
-		currentTime  string
-		chats        []repository.Chat
-		expectedIDs  []int64
+		name        string
+		currentTime string
+		chats       []repository.Chat
+		expectedIDs []int64
 	}{
 		{
 			name:        "Single matching chat",

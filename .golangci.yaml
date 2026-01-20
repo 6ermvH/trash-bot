@@ -22,6 +22,9 @@ linters:
 
   exclusions:
     paths: []
+    rules:
+      - linters: [funlen, goconst, varnamelen]
+        path: _test\.go
 
 linters-settings:
   lll:
