@@ -8,7 +8,8 @@ var (
 )
 
 type Chat struct {
-	ID      int64    `json:"id"`
-	Current int      `json:"currentUser"`
-	Users   []string `json:"activeUsers"`
+	ID         int64    `json:"id"`
+	Current    int      `json:"currentUser"`
+	Users      []string `json:"activeUsers"`
+	NotifyTime *string  `json:"notifyTime,omitempty"` // время уведомления в формате "HH:MM", nil если не подписан
 }

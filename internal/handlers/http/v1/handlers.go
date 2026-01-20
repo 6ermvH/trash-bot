@@ -20,7 +20,7 @@ type Service interface {
 	Next(ctx context.Context, chatID int64) (string, error)
 	Prev(ctx context.Context, chatID int64) (string, error)
 	SetEstablish(ctx context.Context, chatID int64, users []string) error
-	Subscribe(ctx context.Context, chatID int64) error
+	Subscribe(ctx context.Context, chatID int64, notifyTime string) error
 	Unsubscribe(ctx context.Context, chatID int64) error
 }
 

@@ -100,3 +100,62 @@ func (t *TgBotHandler) sendMessage(
 		log.Printf("%s: %v", errPrefix, err.Error())
 	}
 }
+
+func (t *TgBotHandler) getTimeSelectionKeyboard(botApi *bot.Bot) *inline.Keyboard {
+	keyboard := inline.New(botApi).
+		Row().
+		Button("06:00", []byte("06:00"), t.handleTimeSelection).
+		Button("07:00", []byte("07:00"), t.handleTimeSelection).
+		Button("08:00", []byte("08:00"), t.handleTimeSelection).
+		Button("09:00", []byte("09:00"), t.handleTimeSelection).
+		Row().
+		Button("10:00", []byte("10:00"), t.handleTimeSelection).
+		Button("11:00", []byte("11:00"), t.handleTimeSelection).
+		Button("12:00", []byte("12:00"), t.handleTimeSelection).
+		Button("13:00", []byte("13:00"), t.handleTimeSelection).
+		Row().
+		Button("14:00", []byte("14:00"), t.handleTimeSelection).
+		Button("15:00", []byte("15:00"), t.handleTimeSelection).
+		Button("16:00", []byte("16:00"), t.handleTimeSelection).
+		Button("17:00", []byte("17:00"), t.handleTimeSelection).
+		Row().
+		Button("18:00", []byte("18:00"), t.handleTimeSelection).
+		Button("19:00", []byte("19:00"), t.handleTimeSelection).
+		Button("20:00", []byte("20:00"), t.handleTimeSelection).
+		Button("21:00", []byte("21:00"), t.handleTimeSelection).
+		Row().
+		Button("22:00", []byte("22:00"), t.handleTimeSelection).
+		Button("23:00", []byte("23:00"), t.handleTimeSelection)
+
+	return keyboard
+}
+
+func (t *TgBotHandler) handleTimeSelection(
+	ctx context.Context,
+	botApi *bot.Bot,
+	mes models.MaybeInaccessibleMessage,
+	data []byte,
+) {
+	chatID := mes.Message.Chat.ID
+	selectedTime := string(data)
+
+	if err := t.service.Subscribe(ctx, chatID, selectedTime); err != nil {
+		t.sendServiceError(ctx, botApi, chatID, err, "TimeSelection Subscribe")
+
+		return
+	}
+
+	// Удаляем сообщение с клавиатурой
+	_, _ = botApi.DeleteMessage(ctx, &bot.DeleteMessageParams{
+		ChatID:    chatID,
+		MessageID: mes.Message.ID,
+	})
+
+	t.sendMessage(
+		ctx,
+		botApi,
+		chatID,
+		"✅ Вы подписались на ежедневные напоминания в "+selectedTime,
+		"TimeSelection send message error",
+	)
+}

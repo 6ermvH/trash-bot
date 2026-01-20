@@ -16,12 +16,13 @@ var (
 type Repository interface {
 	GetChats(ctx context.Context) ([]repository.Chat, error)
 	GetChat(ctx context.Context, chatID int64) (*repository.Chat, error)
+	GetSubscribedChats(ctx context.Context) ([]repository.Chat, error)
 
 	GetCurrent(ctx context.Context, chatID int64) (string, error)
 	SetNext(ctx context.Context, chatID int64) error
 	SetPrev(ctx context.Context, chatID int64) error
 	SetEstablish(ctx context.Context, chatID int64, users []string) error
-	Subscribe(ctx context.Context, chatID int64) error
+	Subscribe(ctx context.Context, chatID int64, notifyTime string) error
 	Unsubscribe(ctx context.Context, chatID int64) error
 }
 
@@ -139,10 +140,35 @@ func (s *Service) SetEstablish(ctx context.Context, chatID int64, users []string
 	return nil
 }
 
-func (s *Service) Subscribe(ctx context.Context, chatID int64) error {
+func (s *Service) Subscribe(ctx context.Context, chatID int64, notifyTime string) error {
+	if _, err := s.repo.GetChat(ctx, chatID); err != nil {
+		if errors.Is(err, repository.ErrChatIsNotInitialize) {
+			return ErrTryToInitialize
+		}
+
+		return fmt.Errorf("get chat for subscribe: %w", err)
+	}
+
+	if err := s.repo.Subscribe(ctx, chatID, notifyTime); err != nil {
+		return fmt.Errorf("subscribe in repo: %w", err)
+	}
+
 	return nil
 }
 
 func (s *Service) Unsubscribe(ctx context.Context, chatID int64) error {
+	if err := s.repo.Unsubscribe(ctx, chatID); err != nil {
+		return fmt.Errorf("unsubscribe in repo: %w", err)
+	}
+
 	return nil
+}
+
+func (s *Service) GetSubscribedChats(ctx context.Context) ([]repository.Chat, error) {
+	chats, err := s.repo.GetSubscribedChats(ctx)
+	if err != nil {
+		return nil, fmt.Errorf("get subscribed chats from repo: %w", err)
+	}
+
+	return chats, nil
 }

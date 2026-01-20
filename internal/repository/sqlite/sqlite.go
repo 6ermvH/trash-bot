@@ -43,7 +43,7 @@ func (r *RepoSQLite) Close() error {
 }
 
 func (r *RepoSQLite) GetChats(ctx context.Context) (_ []repository.Chat, err error) {
-	rows, err := r.db.QueryContext(ctx, "SELECT id, current, users FROM chats")
+	rows, err := r.db.QueryContext(ctx, "SELECT id, current, users, notify_time FROM chats")
 	if err != nil {
 		return nil, fmt.Errorf("query chats: %w", err)
 	}
@@ -58,16 +58,21 @@ func (r *RepoSQLite) GetChats(ctx context.Context) (_ []repository.Chat, err err
 
 	for rows.Next() {
 		var (
-			chat      repository.Chat
-			usersJSON string
+			chat       repository.Chat
+			usersJSON  string
+			notifyTime sql.NullString
 		)
 
-		if err := rows.Scan(&chat.ID, &chat.Current, &usersJSON); err != nil {
+		if err := rows.Scan(&chat.ID, &chat.Current, &usersJSON, &notifyTime); err != nil {
 			return nil, fmt.Errorf("scan chat: %w", err)
 		}
 
 		if err := json.Unmarshal([]byte(usersJSON), &chat.Users); err != nil {
 			return nil, fmt.Errorf("decode chat users: %w", err)
+		}
+
+		if notifyTime.Valid {
+			chat.NotifyTime = &notifyTime.String
 		}
 
 		chats = append(chats, chat)
@@ -82,13 +87,14 @@ func (r *RepoSQLite) GetChats(ctx context.Context) (_ []repository.Chat, err err
 
 func (r *RepoSQLite) GetChat(ctx context.Context, chatID int64) (*repository.Chat, error) {
 	var (
-		chat      repository.Chat
-		usersJSON string
+		chat       repository.Chat
+		usersJSON  string
+		notifyTime sql.NullString
 	)
 
 	err := r.db.QueryRowContext(ctx,
-		"SELECT id, current, users FROM chats WHERE id = ?", chatID,
-	).Scan(&chat.ID, &chat.Current, &usersJSON)
+		"SELECT id, current, users, notify_time FROM chats WHERE id = ?", chatID,
+	).Scan(&chat.ID, &chat.Current, &usersJSON, &notifyTime)
 
 	if errors.Is(err, sql.ErrNoRows) {
 		return nil, repository.ErrChatIsNotInitialize
@@ -100,6 +106,10 @@ func (r *RepoSQLite) GetChat(ctx context.Context, chatID int64) (*repository.Cha
 
 	if err := json.Unmarshal([]byte(usersJSON), &chat.Users); err != nil {
 		return nil, fmt.Errorf("decode chat users: %w", err)
+	}
+
+	if notifyTime.Valid {
+		chat.NotifyTime = &notifyTime.String
 	}
 
 	return &chat, nil
@@ -188,25 +198,94 @@ func (r *RepoSQLite) SetEstablish(ctx context.Context, chatID int64, users []str
 	return nil
 }
 
-func (r *RepoSQLite) Subscribe(ctx context.Context, chatID int64) error {
+func (r *RepoSQLite) Subscribe(ctx context.Context, chatID int64, notifyTime string) error {
+	if _, err := r.db.ExecContext(
+		ctx,
+		"UPDATE chats SET notify_time = ? WHERE id = ?",
+		notifyTime,
+		chatID,
+	); err != nil {
+		return fmt.Errorf("update notify_time: %w", err)
+	}
+
 	return nil
 }
 
 func (r *RepoSQLite) Unsubscribe(ctx context.Context, chatID int64) error {
+	if _, err := r.db.ExecContext(
+		ctx,
+		"UPDATE chats SET notify_time = NULL WHERE id = ?",
+		chatID,
+	); err != nil {
+		return fmt.Errorf("clear notify_time: %w", err)
+	}
+
 	return nil
 }
 
+func (r *RepoSQLite) GetSubscribedChats(ctx context.Context) (_ []repository.Chat, err error) {
+	rows, err := r.db.QueryContext(
+		ctx,
+		"SELECT id, current, users, notify_time FROM chats WHERE notify_time IS NOT NULL",
+	)
+	if err != nil {
+		return nil, fmt.Errorf("query subscribed chats: %w", err)
+	}
+
+	defer func() {
+		if closeErr := rows.Close(); closeErr != nil && err == nil {
+			err = fmt.Errorf("close rows: %w", closeErr)
+		}
+	}()
+
+	chats := make([]repository.Chat, 0)
+
+	for rows.Next() {
+		var (
+			chat       repository.Chat
+			usersJSON  string
+			notifyTime sql.NullString
+		)
+
+		if err := rows.Scan(&chat.ID, &chat.Current, &usersJSON, &notifyTime); err != nil {
+			return nil, fmt.Errorf("scan chat: %w", err)
+		}
+
+		if err := json.Unmarshal([]byte(usersJSON), &chat.Users); err != nil {
+			return nil, fmt.Errorf("decode chat users: %w", err)
+		}
+
+		if notifyTime.Valid {
+			chat.NotifyTime = &notifyTime.String
+		}
+
+		chats = append(chats, chat)
+	}
+
+	if err := rows.Err(); err != nil {
+		return nil, fmt.Errorf("iterate subscribed chats: %w", err)
+	}
+
+	return chats, nil
+}
+
 func (r *RepoSQLite) migrate(ctx context.Context) error {
-	query := `
+	createTable := `
 	CREATE TABLE IF NOT EXISTS chats (
 		id INTEGER PRIMARY KEY,
 		current INTEGER NOT NULL DEFAULT 0,
-		users TEXT NOT NULL DEFAULT '[]'
+		users TEXT NOT NULL DEFAULT '[]',
+		notify_time TEXT DEFAULT NULL
 	);`
 
-	if _, err := r.db.ExecContext(ctx, query); err != nil {
-		return fmt.Errorf("exec migration: %w", err)
+	if _, err := r.db.ExecContext(ctx, createTable); err != nil {
+		return fmt.Errorf("exec create table migration: %w", err)
 	}
+
+	// Добавляем колонку notify_time если она не существует (для существующих БД)
+	addColumn := `ALTER TABLE chats ADD COLUMN notify_time TEXT DEFAULT NULL;`
+	// Игнорируем ошибку, если колонка уже существует
+	_, _ = r.db.ExecContext(ctx, addColumn)
 
 	return nil
 }

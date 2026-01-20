@@ -16,7 +16,7 @@ type Service interface {
 	Next(ctx context.Context, chatID int64) (string, error)
 	Prev(ctx context.Context, chatID int64) (string, error)
 	SetEstablish(ctx context.Context, chatID int64, users []string) error
-	Subscribe(ctx context.Context, chatID int64) error
+	Subscribe(ctx context.Context, chatID int64, notifyTime string) error
 	Unsubscribe(ctx context.Context, chatID int64) error
 }
 
@@ -126,4 +126,35 @@ func (t *TgBotHandler) Who(ctx context.Context, botApi *bot.Bot, update *models.
 	}); err != nil {
 		log.Printf("Who. send message: %v", err)
 	}
+}
+
+func (t *TgBotHandler) Subscribe(ctx context.Context, botApi *bot.Bot, update *models.Update) {
+	chatID := update.Message.Chat.ID
+
+	_, err := botApi.SendMessage(ctx, &bot.SendMessageParams{
+		ChatID:      chatID,
+		Text:        "Выберите время для ежедневного напоминания:",
+		ReplyMarkup: t.getTimeSelectionKeyboard(botApi),
+	})
+	if err != nil {
+		log.Printf("Subscribe. send message: %v", err)
+	}
+}
+
+func (t *TgBotHandler) Unsubscribe(ctx context.Context, botApi *bot.Bot, update *models.Update) {
+	chatID := update.Message.Chat.ID
+
+	if err := t.service.Unsubscribe(ctx, chatID); err != nil {
+		t.sendServiceError(ctx, botApi, chatID, err, "Unsubscribe")
+
+		return
+	}
+
+	t.sendMessage(
+		ctx,
+		botApi,
+		chatID,
+		"Вы отписались от ежедневных напоминаний",
+		"Unsubscribe send message error",
+	)
 }

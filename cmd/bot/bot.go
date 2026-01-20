@@ -6,6 +6,7 @@ import (
 
 	"github.com/6ermvH/trash-bot/internal/config"
 	"github.com/6ermvH/trash-bot/internal/handlers/telegram"
+	"github.com/6ermvH/trash-bot/internal/services/scheduler"
 	"github.com/6ermvH/trash-bot/internal/services/trashmanager"
 	"github.com/go-telegram/bot"
 )
@@ -35,6 +36,22 @@ func Start(ctx context.Context, cfg *config.Config, trashm *trashmanager.Service
 	botApi.RegisterHandler(bot.HandlerTypeMessageText, "next", bot.MatchTypeCommand, handlers.Next)
 	botApi.RegisterHandler(bot.HandlerTypeMessageText, "prev", bot.MatchTypeCommand, handlers.Prev)
 	botApi.RegisterHandler(bot.HandlerTypeMessageText, "who", bot.MatchTypeCommand, handlers.Who)
+	botApi.RegisterHandler(
+		bot.HandlerTypeMessageText,
+		"subscribe",
+		bot.MatchTypeCommand,
+		handlers.Subscribe,
+	)
+	botApi.RegisterHandler(
+		bot.HandlerTypeMessageText,
+		"unsubscribe",
+		bot.MatchTypeCommand,
+		handlers.Unsubscribe,
+	)
+
+	// Запускаем планировщик уведомлений
+	notifyScheduler := scheduler.New(trashm, botApi)
+	go notifyScheduler.Start(ctx)
 
 	botApi.Start(ctx)
 

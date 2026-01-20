@@ -113,10 +113,45 @@ func (r *RepoInMem) SetEstablish(ctx context.Context, chatID int64, users []stri
 	return nil
 }
 
-func (r *RepoInMem) Subscribe(ctx context.Context, chatID int64) error {
+func (r *RepoInMem) Subscribe(ctx context.Context, chatID int64, notifyTime string) error {
+	r.mu.Lock()
+	defer r.mu.Unlock()
+
+	chat, ok := r.chats[chatID]
+	if !ok {
+		return repository.ErrChatIsNotInitialize
+	}
+
+	chat.NotifyTime = &notifyTime
+
 	return nil
 }
 
 func (r *RepoInMem) Unsubscribe(ctx context.Context, chatID int64) error {
+	r.mu.Lock()
+	defer r.mu.Unlock()
+
+	chat, ok := r.chats[chatID]
+	if !ok {
+		return nil // не ошибка, если чата нет
+	}
+
+	chat.NotifyTime = nil
+
 	return nil
+}
+
+func (r *RepoInMem) GetSubscribedChats(ctx context.Context) ([]repository.Chat, error) {
+	r.mu.Lock()
+	defer r.mu.Unlock()
+
+	result := make([]repository.Chat, 0)
+
+	for _, chat := range r.chats {
+		if chat.NotifyTime != nil {
+			result = append(result, *chat)
+		}
+	}
+
+	return result, nil
 }
