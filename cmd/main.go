@@ -3,6 +3,9 @@ package main
 import (
 	"context"
 	"log"
+	"os"
+	"os/signal"
+	"syscall"
 
 	"github.com/6ermvH/trash-bot/cmd/bot"
 	"github.com/6ermvH/trash-bot/cmd/panel"
@@ -23,33 +26,13 @@ func main() {
 		log.Fatalf("load config: %v", err)
 	}
 
-	group, ctx := errgroup.WithContext(context.Background())
+	trashm, cleanup := createService(cfg)
+	defer cleanup()
 
-	var trashm *trashmanager.Service
+	ctx, cancel := signal.NotifyContext(context.Background(), os.Interrupt, syscall.SIGTERM)
+	defer cancel()
 
-	switch cfg.Database.Type {
-	case "sqlite":
-		repo, err := sqlite.New(cfg.Database.Path)
-		if err != nil {
-			log.Fatalf("failed to open sqlite db: %v", err)
-		}
-
-		defer func() {
-			if err := repo.Close(); err != nil {
-				log.Printf("close sqlite db: %v", err)
-			}
-		}()
-
-		trashm = trashmanager.New(repo)
-
-		log.Printf("Using SQLite database: %s\n", cfg.Database.Path)
-	default:
-		repo := inmemory.New()
-
-		trashm = trashmanager.New(repo)
-
-		log.Println("Using in-memory database")
-	}
+	group, ctx := errgroup.WithContext(ctx)
 
 	if cfg.Server.Enabled {
 		group.Go(func() error {
@@ -67,5 +50,34 @@ func main() {
 		log.Printf("application ended with error: %v\n", err)
 
 		return
+	}
+
+	log.Println("Application stopped gracefully")
+}
+
+func createService(cfg *config.Config) (*trashmanager.Service, func()) {
+	switch cfg.Database.Type {
+	case "sqlite":
+		repo, err := sqlite.New(cfg.Database.Path)
+		if err != nil {
+			log.Fatalf("failed to open sqlite db: %v", err)
+		}
+
+		log.Printf("Using SQLite database: %s\n", cfg.Database.Path)
+
+		cleanup := func() {
+			if err := repo.Close(); err != nil {
+				log.Printf("close sqlite db: %v", err)
+			}
+		}
+
+		return trashmanager.New(repo), cleanup
+
+	default:
+		repo := inmemory.New()
+
+		log.Println("Using in-memory database")
+
+		return trashmanager.New(repo), func() {}
 	}
 }

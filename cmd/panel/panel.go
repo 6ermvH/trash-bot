@@ -3,14 +3,21 @@ package panel
 import (
 	"context"
 	"embed"
+	"errors"
 	"fmt"
 	"log"
 	"net/http"
+	"time"
 
 	"github.com/6ermvH/trash-bot/internal/config"
 	handlers "github.com/6ermvH/trash-bot/internal/handlers/http/v1"
 	"github.com/6ermvH/trash-bot/internal/services/trashmanager"
 	"github.com/gin-gonic/gin"
+)
+
+const (
+	readHeaderTimeout = 5 * time.Second
+	shutdownTimeout   = 5 * time.Second
 )
 
 //go:embed all:web
@@ -59,10 +66,28 @@ func Start(ctx context.Context, cfg *config.Config, trashm *trashmanager.Service
 	serveEmbeddedFile(router, "/style.css", "web/style.css", "text/css; charset=utf-8")
 	serveEmbeddedFile(router, "/app.js", "web/app.js", "application/javascript; charset=utf-8")
 
-	port := ":" + cfg.Server.Port
+	addr := cfg.Server.Addr + ":" + cfg.Server.Port
 
-	if err := router.Run(port); err != nil {
-		return fmt.Errorf("Start server on port %s : %w", port, err)
+	srv := &http.Server{
+		Addr:              addr,
+		Handler:           router,
+		ReadHeaderTimeout: readHeaderTimeout,
+	}
+
+	go func() {
+		<-ctx.Done()
+
+		shutdownCtx, cancel := context.WithTimeout(context.Background(), shutdownTimeout)
+		defer cancel()
+
+		//nolint:contextcheck // need fresh context for shutdown after parent is cancelled
+		if err := srv.Shutdown(shutdownCtx); err != nil {
+			log.Printf("HTTP server shutdown error: %v", err)
+		}
+	}()
+
+	if err := srv.ListenAndServe(); err != nil && !errors.Is(err, http.ErrServerClosed) {
+		return fmt.Errorf("start server on %s: %w", addr, err)
 	}
 
 	return nil
