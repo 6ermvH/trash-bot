@@ -14,6 +14,10 @@ import (
 )
 
 func main() {
+	if err := config.LoadEnvFile(".env"); err != nil {
+		log.Fatalf("load .env file: %v", err)
+	}
+
 	cfg, err := config.NewFromFile("config/base.yaml")
 	if err != nil {
 		log.Fatalf("load config: %v", err)

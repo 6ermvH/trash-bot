@@ -1,13 +1,13 @@
 telegram:
-  botkey: "6317398679:AAE5pVghUpRGGagOsxebvlT3IqTOmcWXaxA"
+  botkey: ""  # set via TELEGRAM_BOT_KEY env var
 
 server:
   enabled: true
   addr: "0.0.0.0"
   port: "8080"
-  adminlogin: "admin"
-  adminpassword: "admin"
-  jwtsecret: "your-secret-key-change-in-production"
+  adminlogin: ""     # set via ADMIN_LOGIN env var
+  adminpassword: ""  # set via ADMIN_PASSWORD env var
+  jwtsecret: ""      # set via JWT_SECRET env var
 
 database:
   type: "sqlite"

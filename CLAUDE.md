@@ -50,13 +50,15 @@ internal/repository/     → Data access layer (interface + implementations)
 
 ### Key Components
 
-- **TrashManager Service** (`internal/services/trashmanager/`): Core business logic for managing user rotation per chat. Methods: `Who`, `Next`, `Prev`, `SetEstablish`, `Stats`, `Chats`.
+- **TrashManager Service** (`internal/services/trashmanager/`): Core business logic for managing user rotation per chat. Methods: `Who`, `Next`, `Prev`, `SetEstablish`, `Stats`, `Chats`, `Subscribe`, `Unsubscribe`.
 
-- **Telegram Handlers** (`internal/handlers/telegram/`): Bot commands (`/start`, `/set`, `/next`, `/prev`, `/who`) and inline keyboard callbacks.
+- **Scheduler Service** (`internal/services/scheduler/`): Background service that sends daily reminders to subscribed chats at their configured time. Runs on a per-minute ticker.
+
+- **Telegram Handlers** (`internal/handlers/telegram/`): Bot commands (`/start`, `/set`, `/next`, `/prev`, `/who`, `/subscribe`, `/unsubscribe`) and inline keyboard callbacks.
 
 - **HTTP Handlers** (`internal/handlers/http/v1/`): REST API with JWT authentication. Endpoints: `/api/login`, `/api/stats`, `/api/chats`, `/api/chats/:id`.
 
-- **Repository Pattern**: `Chat` model with `ID` (Telegram chat ID), `Current` (index), `Users` (list of names). Storage backend selected via `config.Database.Type`.
+- **Repository Pattern**: `Chat` model with `ID` (Telegram chat ID), `Current` (index), `Users` (list of names), `NotifyTime` (optional, for daily reminders). Storage backend selected via `config.Database.Type`.
 
 ### Configuration
 

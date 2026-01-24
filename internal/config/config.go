@@ -1,8 +1,10 @@
 package config
 
 import (
+	"bufio"
 	"fmt"
 	"os"
+	"strings"
 
 	"gopkg.in/yaml.v3"
 )
@@ -51,11 +53,78 @@ func NewFromFile(path string) (*Config, error) {
 		return nil, fmt.Errorf("decode data from file %q: %w", path, err)
 	}
 
+	cfg.loadFromEnv()
+
 	return &cfg, nil
+}
+
+// LoadEnvFile loads environment variables from a .env file.
+// It does not override existing environment variables.
+func LoadEnvFile(path string) error {
+	file, err := os.Open(path)
+	if err != nil {
+		if os.IsNotExist(err) {
+			return nil // .env file is optional
+		}
+
+		return fmt.Errorf("open env file: %w", err)
+	}
+
+	defer func() {
+		_ = file.Close()
+	}()
+
+	scanner := bufio.NewScanner(file)
+	for scanner.Scan() {
+		line := strings.TrimSpace(scanner.Text())
+
+		// skip empty lines and comments
+		if line == "" || strings.HasPrefix(line, "#") {
+			continue
+		}
+
+		key, value, found := strings.Cut(line, "=")
+		if !found {
+			continue
+		}
+
+		key = strings.TrimSpace(key)
+		value = strings.TrimSpace(value)
+
+		// don't override existing env vars
+		if os.Getenv(key) == "" {
+			_ = os.Setenv(key, value)
+		}
+	}
+
+	if err := scanner.Err(); err != nil {
+		return fmt.Errorf("scan env file: %w", err)
+	}
+
+	return nil
 }
 
 func (c *Config) WithTelegramBotKey(key string) *Config {
 	c.Telegram.BotKey = key
 
 	return c
+}
+
+// loadFromEnv overrides config values with environment variables.
+func (c *Config) loadFromEnv() {
+	if v := os.Getenv("TELEGRAM_BOT_KEY"); v != "" {
+		c.Telegram.BotKey = v
+	}
+
+	if v := os.Getenv("ADMIN_LOGIN"); v != "" {
+		c.Server.AdminLogin = v
+	}
+
+	if v := os.Getenv("ADMIN_PASSWORD"); v != "" {
+		c.Server.AdminPassword = v
+	}
+
+	if v := os.Getenv("JWT_SECRET"); v != "" {
+		c.Server.JWTSecret = v
+	}
 }
